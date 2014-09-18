@@ -14,13 +14,13 @@ For function declarations there should be a space before the first parentheses. 
 		return 'Foo';
 	}
 
-	helloWrold();
+	helloWorld();
 
 **Class names**
 Class names can not contain underscores. We use namespaced enviroment, so no need for fallback.
 
 **Trailing whitesapce**
-Often lead into bigger diffs than the code that was changes, and is not needed so it should always be trimmed.
+Often lead into bigger diffs than the code that was changed, and is not needed so it should always be trimmed.
 
 **Default quotes are single quotes.**
 Single quotes restrict the use of variables in them, and makes cleaner code. You may also use double quotes for html output without escaping it which is more common to do than to output single quotes. When using double quotes, variables should be in curly brackets. This ease up readability, and can be used with arrays.

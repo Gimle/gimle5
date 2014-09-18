@@ -1,7 +1,7 @@
 Strategic Choices
 =================
 
-This document is ment to describe why different choices have been made. If there are other reasons for or against these decisions please join in on the debate. The earlier a change is suggested, the easier it is to implement.
+This document is meant to describe why different choices have been made. If there are other reasons for or against these decisions please join in on the debate. The earlier a change is suggested, the easier it is to implement.
 
 
 Folder and file naming
