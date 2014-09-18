@@ -1,0 +1,33 @@
+Strategic Choices
+=================
+
+This document is ment to describe why different choices have been made. If there are other reasons for or against these decisions please join in on the debate. The earlier a change is suggested, the easier it is to implement.
+
+
+Folder and file naming
+----------------------
+
+**Plural or singular naming of folders.**
+Many systems mix this so you have a folder called "templates" and another called "autoload". Since a folder can contain multiple files we think of folders like namespaces, and try and stick with singular naming convension for these.
+
+**Uppercase or lowercase.**
+All files are lowercase, this so we don't end up with any naming collisions. The system still supports autoloading of classes from thirdparties that use a mixed case for filenames.
+
+Configuration
+-------------
+
+**ini files, database, php files, xml files etc.**
+To make configuration easy editable, a mix of php files and ini files is easier to read and maintain.
+
+General or basic configuration included with the project in a config.php file. Enviroment overrides can be specified in a config.ini file that should not be comitted so each user can have overrides and no conficts when comitting.
+
+Paths
+-----
+
+**Absolute or relative paths.**
+Backend absolute paths give the developer instant gradification when looking for files. Frontend there can be times when different templates are used with different depth urls and the resources they refer to still resides on the same location, but with a different relative path. For loading speeds different scenarios can give different results.
+
+Coding standards
+----------------
+
+See the separate [coding standard](coding standard.md) file.
