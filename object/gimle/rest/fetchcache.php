@@ -155,7 +155,7 @@ class FetchCache extends Fetch
 	private function loadXml ($xmlstring)
 	{
 		$cond = libxml_use_internal_errors(true);
-		$xml = simplexml_load_string((string)$xmlstring);
+		$xml = simplexml_load_string((string)$xmlstring, '\gimle\xml\SimpleXmlElement');
 		if ($cond !== true) {
 			libxml_use_internal_errors($cond);
 		}
