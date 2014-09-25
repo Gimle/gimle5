@@ -7,6 +7,25 @@ namespace gimle\xml;
 class SimpleXmlElement extends \SimpleXmlElement
 {
 	/**
+	 * Add a new processing instruction to the beginning of the document.
+	 *
+	 * @param string $name The name of the instruction.
+	 * @param string $data The data for the instruction.
+	 * @return bool true on success, false on failure.
+	 */
+	public function addPi ($name, $data)
+	{
+		$dom = dom_import_simplexml($this);
+
+		$pi = $dom->ownerDocument->createProcessingInstruction($name, $data);
+		if ($pi === false) {
+			return false;
+		}
+
+		return (bool) $dom->ownerDocument->insertBefore($pi, $dom->ownerDocument->firstChild);
+	}
+
+	/**
 	 * Get the first child object.
 	 *
 	 * @param SimpleXmlElement $ref Reference node, or null if current is to be used.
@@ -24,7 +43,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 	/**
 	 * Get the following sibling of the current node.
 	 *
-	 * return mixed SimpleXmlElement if found, false if not.
+	 * @return mixed SimpleXmlElement if found, false if not.
 	 */
 	public function getNext ()
 	{
@@ -37,7 +56,6 @@ class SimpleXmlElement extends \SimpleXmlElement
 	 * @param string $name The attribute name.
 	 * @param string $type The element names to search.
 	 * @param string $prefix Prefix before the numeric value.
-	 *
 	 * @return int
 	 */
 	public function getNextId ($name = 'id', $type = '*', $prefix = '')
@@ -67,7 +85,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 	 *
 	 * Can not get parent of root node.
 	 *
-	 * return mixed SimpleXmlElement if found, false if not (root does not have a parent).
+	 * @return mixed SimpleXmlElement if found, false if not (root does not have a parent).
 	 */
 	public function getParent ()
 	{
@@ -75,9 +93,33 @@ class SimpleXmlElement extends \SimpleXmlElement
 	}
 
 	/**
+	 * Get all processing instructions from the document with a matching name.
+	 *
+	 * @param string $name
+	 * @return array
+	 */
+	public function getPi ($name = false)
+	{
+		$dom = dom_import_simplexml($this)->ownerDocument;
+		$xpath = new \DomXpath($dom);
+
+		$return = array();
+		if ($name !== false) {
+			foreach ($xpath->query('//processing-instruction("' . $name . '")') as $pi) {
+				$return[] = $pi->nodeValue;
+			}
+		} else {
+			foreach ($xpath->query('//processing-instruction()') as $pi) {
+				$return[$pi->nodeName][] = $pi->nodeValue;
+			}
+		}
+		return $return;
+	}
+
+	/**
 	 * Get the preceding sibling of the current node.
 	 *
-	 * return mixed SimpleXmlElement if found, false if not.
+	 * @return mixed SimpleXmlElement if found, false if not.
 	 */
 	public function getPrevious ()
 	{
@@ -172,7 +214,6 @@ class SimpleXmlElement extends \SimpleXmlElement
 	 *
 	 * @param string $name The name of the child element to add.
 	 * @param string $value If specified, the value of the child element.
-	 *
 	 * @return SimpleXmlElement The child added to the XML node.
 	 */
 	public function prependChild ($name, $value = false)
@@ -186,6 +227,8 @@ class SimpleXmlElement extends \SimpleXmlElement
 
 	/**
 	 * Get a pretty text version if the xml.
+	 *
+	 * Note: All processing instructions is moved to the top of the document.
 	 *
 	 * @return string
 	 */
@@ -203,7 +246,16 @@ class SimpleXmlElement extends \SimpleXmlElement
 		$res = $dom->saveXml($dom->documentElement);
 
 		$res = preg_replace('/^  |\G  /m', "\t", $res);
-		return $res;
+
+		$pi = $this->getPi();
+		$prepend = '';
+		foreach ($pi as $name => $values) {
+			foreach ($values as $value) {
+				$prepend .= '<?' . $name . ' ' . $value . '?>' . "\n";
+			}
+		}
+
+		return $prepend . $res;
 	}
 
 	/**
@@ -237,6 +289,21 @@ class SimpleXmlElement extends \SimpleXmlElement
 			throw new \DOMException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
 		}
 		$dom->removeChild($ref);
+	}
+
+	/**
+	 * Remove any processing instructions from the document with a matching name.
+	 *
+	 * @param string $name
+	 * @return void
+	 */
+	public function removePi ($name) {
+		$dom = dom_import_simplexml($this)->ownerDocument;
+		$xpath = new \DomXpath($dom);
+
+		foreach ($xpath->query('//processing-instruction("' . $name . '")') as $pi) {
+			$pi->parentNode->removeChild($pi);
+		}
 	}
 
 	/**
