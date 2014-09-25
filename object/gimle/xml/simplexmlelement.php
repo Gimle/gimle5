@@ -283,12 +283,8 @@ class SimpleXmlElement extends \SimpleXmlElement
 			return;
 		}
 
-		$dom = dom_import_simplexml($this);
 		$ref = dom_import_simplexml($ref);
-		if ($ref->ownerDocument !== $dom->ownerDocument) {
-			throw new \DOMException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
-		}
-		$dom->removeChild($ref);
+		$ref->parentNode->removeChild($ref);
 	}
 
 	/**
@@ -338,7 +334,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 				$dom = dom_import_simplexml($this);
 				$ref = dom_import_simplexml($node);
 				if ($ref->ownerDocument !== $dom->ownerDocument) {
-					throw new \DOMException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
+					throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
 				}
 
 				$newNode = $ref->ownerDocument->createElement($name);
@@ -358,7 +354,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 		$dom = dom_import_simplexml($this);
 		$ref = dom_import_simplexml($ref);
 		if ($ref->ownerDocument !== $dom->ownerDocument) {
-			throw new \DOMException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
+			throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
 		}
 
 		$newNode = $ref->ownerDocument->createElement($name);
@@ -407,7 +403,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 		$dom = dom_import_simplexml($this);
 		$ref = dom_import_simplexml($ref);
 		if ($ref->ownerDocument !== $dom->ownerDocument) {
-			throw new \DOMException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
+			throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
 		}
 		$import = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
 		$dom->replaceChild($import, $ref);
