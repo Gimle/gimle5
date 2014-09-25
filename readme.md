@@ -5,7 +5,7 @@ An open and including php framework in development.
 > **Highlights:**
 
 > - Easy to move between different environments (dev, test, live, and others).
-> - Helpful xml objects.
+> - Extended SimpleXmlElement.
 > - Rest services.
 > - Modular.
 > - Up to date.
