@@ -1,0 +1,267 @@
+SimpleXmlElement
+================
+
+This document is intended to help with development that requires xml. Best practices are not described here, and most of the actions have multiple solutions described. As with php, there are many ways to do the same thing. So if you have a preferred way of doing things, feel free to stick with your method of choice :)
+
+#### <i class="icon-file"></i> Example xml 1
+
+	<root>
+		<people>
+			<person id="1">
+				<name class="first">John</name>
+				<name class="last">Doe</name>
+				<name>John Doe</name>
+			</person>
+			<person id="2">
+				<name class="first">Jane</name>
+				<name class="last">Doe</name>
+			</person>
+		</people>
+	</root>
+
+
+Creating a new object
+---------------------
+
+Creating a new object from a string.
+
+	$sxml = false;
+	try {
+		$sxml = new SimpleXmlElement($xmlString);
+	} catch(\Exception $e) {
+	}
+
+Creating a new object from a file.
+
+	$sxml = false;
+	if (is_readable($xmlFile)) {
+		try {
+			$sxml = new SimpleXmlElement(file_get_contents($xmlFile));
+		} catch(\Exception $e) {
+		}
+	}
+
+
+Echo out the xml
+----------------
+
+Echo out the xml as is.
+
+	echo '<pre>' . htmlspecialchars($sxml->asXml()) . '</pre>';
+
+Echo out a reformatted version of the xml file.
+
+	echo '<pre>' . htmlspecialchars($sxml->pretty()) . '</pre>';
+
+
+Xpath
+-----
+
+Some commonly used xpath expressions.
+
+#### Example 1 xml
+
+Start looking from the root with a single "/". The following expression will find all the persons that are located in that exact path.
+
+	/root/people/person
+
+Start looking from anywhere in the document with a double "//". The following expression will find all "person" elements located anywhere in the document.
+
+	//person
+
+You can also use the double slashes in the middle of an expression to find all names as long as they are somewhere underneath a "people" element.
+
+	//people//name
+
+Use an asterisk "*" to match any element name. Find all names under any child of people, regardless of its name.
+
+	//people/*/name
+
+The pipe "|" can be used to select any of the elements. Find people and persons elements regardless of location in the xml.
+
+	//people|persons
+
+Select only names that have the an attribute named "class".
+
+	//name[@class]
+
+Select only names that have the an attribute named "class" that is set to "first".
+
+	//name[@class="first"]
+
+Select only names that does not have a attribute called "class".
+
+	//name[not(@class)]
+
+Select all names except for the ones with the attribute named "class" set to "first".
+
+	//name[not(@class="first")]
+
+Walk from current position, if you have a reference to a node in the xml, and want to start from that position.
+
+	./person/name
+
+Find all nodes that has a specific text.
+
+	//name[text()="Doe"]
+
+Find the parents of the nodes that have a specific text. In this case all people that have "Doe" as any part of their name.
+
+	//name[text()="Doe"]/..
+
+Find all people that have the last name "Doe".
+
+	//name[@class="last" and text()="Doe"]/..
+
+Find the first person that have the last name "Doe".
+
+	(//name[@class="last" and text()="Doe"]/..)[1]
+
+
+Find the next available id
+--------------------------
+
+#### Example 1 xml
+
+Find the id for the next person to add.
+
+	$nextId = $sxml->getNextId();
+	var_dump($nextId);
+
+Output:
+
+	int(3)
+
+
+Methods to modify
+-----------------
+
+* insertAfter ($element, $ref = null)
+* insertBefore ($element, $ref = null)
+* remove ($ref = null)
+* rename ($name, $ref = null)
+* replace ($element, $ref = null)
+* value ($string, $ref = null)
+
+All the above methods can be applied directly to an element, send the element as a reference parameter, or send an xpath as a reference. The remove method is used in the following examples to show how to use the reference parameter.
+
+> **Note:** The root element can not be modified by these methods.
+
+Remove all persons by xpath. If the element does not exist, no error or exception is produced. If the xpath matches multiple elements, all matching elements will be removed.
+
+    $sxml->remove('/root/people/person');
+
+
+Remove a person by reference. If the xpath matches multiple elements, only the first matching elements will be removed.
+
+	if ($item = current($sxml->xpath('/root/people/person'))) {
+		$sxml->remove($item);
+	}
+
+Same as above, but removes all matching elements.
+
+	foreach ($sxml->xpath('/root/people/person') as $item) {
+		$sxml->remove($item);
+	}
+
+
+Remove a person by pointer. If the xpath matches multiple elements, only the first matching elements will be removed.
+
+	if ($item = current($sxml->xpath('/root/people/person'))) {
+		$item->remove();
+	}
+
+Same as above, but removes all matching elements.
+
+	foreach ($sxml->xpath('/root/people/person') as $item) {
+		$item->remove();
+	}
+
+Remove a person by pointer. If the pointer matches multiple elements, only the first matching elements will be renamed.
+
+	$sxml->remove($sxml->people-person);
+
+
+Insert an element
+-----------------
+
+Insert one or more new elements to the document.
+
+> **Note:** See "Methods to Modify" on how the reference can be used.
+
+	public $sxml->insertAfter(mixed $element [mixed $ref = null])
+	public $sxml->insertBefore(mixed $element [mixed $ref = null])
+
+Insert a new elements before or after the referenced nodes.
+
+The new element passed in can be am xml string or a new SimpleXmlElement.
+
+
+Remove an element
+-----------------
+
+Remove one or more elements from the document.
+
+> **Note:** See "Methods to Modify" on how the reference can be used.
+
+	public $sxml->remove([mixed $ref = null])
+
+
+Rename an element
+-----------------
+
+Rename one or more elements in the document.
+
+> **Note:** See "Methods to Modify" on how the reference can be used.
+
+	public $sxml->rename(string $name [, mixed $ref = null])
+
+The new name passed in to the method has to be a string with a valid node name.
+
+
+Replace an element
+-----------------
+
+Replace one or more elements in the document.
+
+> **Note:** See "Methods to Modify" on how the reference can be used.
+
+	public $sxml->replace(mixed $element [, mixed $ref = null])
+
+The new element passed in can be an xml string or a new SimpleXmlElement.
+
+
+Change the value of an element
+------------------------------
+
+Change the value of one or more elements in the document.
+
+> **Note:** See "Methods to Modify" on how the reference can be used.
+
+	public $sxml->replace(string $string [, mixed $ref = null])
+
+The new value passed in to the method has to be a string with a valid node name.
+
+> **Note:** If the element have any child nodes or content from before, it will all be replaced by the new value given.
+
+
+Set attributes
+--------------
+
+#### Example 1 xml
+
+Change the id attribute of John Doe from 1 to 7 with xpath. This same method can be used to add attributes.
+
+	if ($item = current($sxml->xpath('/root/people/person[1]'))) {
+		$item['id'] = 7;
+	}
+
+
+Change the id attribute of John Doe from 1 to 7 without xpath. Will produce a warning if the element does not exist. The same method can be used to add attributes.
+
+	$sxml->people->person[0]['id'] = 7;
+
+
+Add an attribute to an elements. Will produce a warning if the attribute already exists.
+
+	$sxml->people->person->addAttribute('key', 'value');
