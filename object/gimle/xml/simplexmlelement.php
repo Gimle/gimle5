@@ -149,8 +149,10 @@ class SimpleXmlElement extends \SimpleXmlElement
 				return false;
 			}
 			$dom = dom_import_simplexml($sxml[0]);
-		} else {
+		} elseif ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
 			$dom = dom_import_simplexml($ref);
+		} else {
+			return;
 		}
 
 		$insert = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
@@ -184,8 +186,10 @@ class SimpleXmlElement extends \SimpleXmlElement
 				return false;
 			}
 			$dom = dom_import_simplexml($sxml[0]);
-		} else {
+		} elseif ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
 			$dom = dom_import_simplexml($ref);
+		} else {
+			reuturn;
 		}
 		$insert = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
 
@@ -283,8 +287,10 @@ class SimpleXmlElement extends \SimpleXmlElement
 			return;
 		}
 
-		$ref = dom_import_simplexml($ref);
-		$ref->parentNode->removeChild($ref);
+		if ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			$ref = dom_import_simplexml($ref);
+			$ref->parentNode->removeChild($ref);
+		}
 	}
 
 	/**
@@ -351,22 +357,24 @@ class SimpleXmlElement extends \SimpleXmlElement
 			return;
 		}
 
-		$dom = dom_import_simplexml($this);
-		$ref = dom_import_simplexml($ref);
-		if ($ref->ownerDocument !== $dom->ownerDocument) {
-			throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
-		}
-
-		$newNode = $ref->ownerDocument->createElement($name);
-		if ($ref->attributes->length) {
-			foreach ($ref->attributes as $attribute) {
-				$newNode->setAttribute($attribute->nodeName, $attribute->nodeValue);
+		if ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			$dom = dom_import_simplexml($this);
+			$ref = dom_import_simplexml($ref);
+			if ($ref->ownerDocument !== $dom->ownerDocument) {
+				throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
 			}
+
+			$newNode = $ref->ownerDocument->createElement($name);
+			if ($ref->attributes->length) {
+				foreach ($ref->attributes as $attribute) {
+					$newNode->setAttribute($attribute->nodeName, $attribute->nodeValue);
+				}
+			}
+			while ($ref->firstChild) {
+				$newNode->appendChild($ref->firstChild);
+			}
+			$ref->parentNode->replaceChild($newNode, $ref);
 		}
-		while ($ref->firstChild) {
-			$newNode->appendChild($ref->firstChild);
-		}
-		$ref->parentNode->replaceChild($newNode, $ref);
 	}
 
 	/**
@@ -400,13 +408,15 @@ class SimpleXmlElement extends \SimpleXmlElement
 			return;
 		}
 
-		$dom = dom_import_simplexml($this);
-		$ref = dom_import_simplexml($ref);
-		if ($ref->ownerDocument !== $dom->ownerDocument) {
-			throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
+		if ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			$dom = dom_import_simplexml($this);
+			$ref = dom_import_simplexml($ref);
+			if ($ref->ownerDocument !== $dom->ownerDocument) {
+				throw new \DomException('The reference node does not come from the same document as the context node', DOM_WRONG_DOCUMENT_ERR);
+			}
+			$import = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
+			$dom->replaceChild($import, $ref);
 		}
-		$import = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
-		$dom->replaceChild($import, $ref);
 	}
 
 	/**
@@ -443,6 +453,8 @@ class SimpleXmlElement extends \SimpleXmlElement
 			return;
 		}
 
-		dom_import_simplexml($ref)->nodeValue = $string;
+		if ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			dom_import_simplexml($ref)->nodeValue = $string;
+		}
 	}
 }
