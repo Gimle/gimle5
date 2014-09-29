@@ -97,6 +97,10 @@ Select all names except for the ones with the attribute named "class" set to "fi
 
 	//name[not(@class="first")]
 
+Select the first person in the document.
+
+	//person[1]
+
 Walk from current position, if you have a reference to a node in the xml, and want to start from that position.
 
 	./person/name
