@@ -51,8 +51,8 @@ if (isset($config['env_mode'])) {
 }
 unset($env_add);
 
-if (file_exists(SITE_DIR . 'config.php')) {
-	$config = ArrayUtils::merge(require SITE_DIR . 'config.php', $config, true);
+if (is_readable(SITE_DIR . 'config.php')) {
+	$config = ArrayUtils::merge(include SITE_DIR . 'config.php', $config, true);
 }
 
 if (isset($config['module'])) {
@@ -85,20 +85,99 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 			define(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR', $config['dir']['jail'] . $dir . '/');
 		} else {
 			/**
-			 * The local absolute location of where files should be stored.
-			 *
-			 * This will default to the systems default temp directory.
+			 * Sets constants for storage, chache and temp directories.
 			 *
 			 * @var string
 			 */
 			define(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR', sprintf($undefinedDir, $dir));
 		}
 	}
+	if (!is_readable(constant(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR'))) {
+		mkdir(constant(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR'), 0777, true);
+	}
 }
 unset($undefinedDir);
 
+if (!isset($config['base'])) {
+	trigger_error('No basepath set.', E_USER_ERROR);
+} elseif (!is_array($config['base'])) {
+	define('BASE_PATH', $config['base']);
+} elseif (is_array($config['base'])) {
+	$base = 'http';
+	$port = '';
+	if (isset($_SERVER['HTTPS'])) {
+		$base .= 's';
+		if ($_SERVER['SERVER_PORT'] !== '443') {
+			$port = ':' . $_SERVER['SERVER_PORT'];
+		}
+	} elseif ($_SERVER['SERVER_PORT'] !== '80') {
+		$port = ':' . $_SERVER['SERVER_PORT'];
+	}
+	$base .= '://';
+	$host = explode(':', $_SERVER['HTTP_HOST']);
+	$base .= $host[0] . $port . '/';
+	unset($host, $port);
+
+	$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
+	if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
+		$base = substr($base, 0, -mb_strlen(basename($base)));
+	}
+
+	foreach ($config['base'] as $key => $value) {
+		if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
+			trigger_error('Basepath configuration missing.', E_USER_ERROR);
+		}
+
+		/**
+		 * The absolute path to the base of each of the base paths defined in config.
+		 *
+		 * <p>When working with multiple bases in config, each will be assigned to their own constant, starting with BASE_</p>
+		 */
+		define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
+		if ((isset($value['path'])) && (!defined(__NAMESPACE__ . '\\BASE_PATH_KEY'))) {
+			if (((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) || ((isset($value['regex'])) && (preg_match($value['regex'], $base)))) {
+				/**
+				 * The public base path of the site.
+				 *
+				 * This must be set in a config file.
+				 * When multiple domains is matched, it will match in the same order as in the config.
+				 * The default value will be calculated automatically.
+				 *
+				 * <p>Example single domain as string in config.ini</p>
+				 * <code>base = "http://example.com/"</code>
+				 *
+				 * <p>Example multiple domain with string start match in config.ini</p>
+				 * <code>[base.mobile]
+				 * start = "http://m.";
+				 * path = "http://m.example.com/"
+				 *
+				 * [base.default]
+				 * start = "http://";
+				 * path = "http://example.com/"</code>
+				 * <p>To search with a regular expression, change the "start" keyword with "regex".</p>
+				 *
+				 * @var string
+				 */
+				define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
+
+				/**
+				 * The key to the currenty matched base path from config.
+				 *
+				 * <p>When working with multiple bases in config, this will contain the key of the matched block.</p>
+				 */
+				define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+			}
+		}
+	}
+	if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
+		trigger_error('No matching basepath configuration.', E_USER_ERROR);
+	}
+}
+
 if (isset($config['timezone'])) {
 	date_default_timezone_set($config['timezone']);
+} else {
+	date_default_timezone_set('CET');
 }
 
 Config::setAll($config);
@@ -106,7 +185,7 @@ unset($config);
 
 if (Config::exists('module')) {
 	foreach (Config::get('module') as $name => $value) {
-		if (file_exists(SITE_DIR . 'module/' . $name . '/autoload/')) {
+		if (is_readable(SITE_DIR . 'module/' . $name . '/autoload/')) {
 			foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
 				include SITE_DIR . 'module/' . $name . '/autoload/' . $fileInfo->getFilename();
 			}
