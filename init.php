@@ -1,6 +1,8 @@
 <?php
 namespace gimle;
 
+mb_internal_encoding('utf-8');
+
 foreach (new \RecursiveDirectoryIterator(__DIR__ . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
 	include __DIR__ . '/autoload/' . $fileInfo->getFilename();
 }
@@ -73,6 +75,7 @@ if ((isset($config['path_info_override'])) && ($config['path_info_override'] !==
 
 if (isset($config['umask'])) {
 	umask($config['umask']);
+	unset($config['umask']);
 }
 
 $undefinedDir = sys_get_temp_dir() . '/gimle/%s/' . SITE_ID . '/';
@@ -173,11 +176,51 @@ if (!isset($config['base'])) {
 		trigger_error('No matching basepath configuration.', E_USER_ERROR);
 	}
 }
+unset($config['base']);
 
 if (isset($config['timezone'])) {
 	date_default_timezone_set($config['timezone']);
+	unset($config['timezone']);
 } else {
 	date_default_timezone_set('CET');
+}
+
+if (ENV_MODE & ENV_CLI) {
+	ini_set('html_errors', false);
+}
+if ((isset($config['server']['override'])) && (is_array($config['server']['override'])) && (!empty($config['server']['override']))) {
+	if ((ENV_MODE & ENV_WEB) && (isset($config['server']['override']['html_errors']))) {
+		ini_set('html_errors', $config['server']['override']['html_errors']);
+	}
+	if (isset($config['server']['override']['error_reporting'])) {
+		ini_set('error_reporting', $config['server']['override']['error_reporting']);
+		error_reporting($config['server']['override']['error_reporting']);
+	}
+	if (isset($config['server']['override']['max_execution_time'])) {
+		ini_set('max_execution_time', $config['server']['override']['max_execution_time']);
+	}
+	if (isset($config['server']['override']['memory_limit'])) {
+		ini_set('memory_limit', $config['server']['override']['memory_limit']);
+	}
+	if (ENV_MODE & ENV_CLI) {
+		if (isset($config['server']['override']['html_errors_cli'])) {
+			ini_set('html_errors', $config['server']['override']['html_errors_cli']);
+		}
+		if (isset($config['server']['override']['error_reporting_cli'])) {
+			ini_set('error_reporting', $config['server']['override']['error_reporting_cli']);
+			error_reporting($config['server']['override']['error_reporting_cli']);
+		}
+		if (isset($config['server']['override']['max_execution_time_cli'])) {
+			ini_set('max_execution_time', $config['server']['override']['max_execution_time_cli']);
+		}
+		if (isset($config['server']['override']['memory_limit_cli'])) {
+			ini_set('memory_limit', $config['server']['override']['memory_limit_cli']);
+		}
+	}
+	unset($config['server']['override']);
+	if (empty($config['server'])) {
+		unset($config['server']);
+	}
 }
 
 Config::setAll($config);
