@@ -1,10 +1,10 @@
-Coding standards
-----------------
+Coding standard
+---------------
 
-The coding standards will follow the PSR standard with some exceptions and additions.
+The coding standard will follow the [PSR standard](http://www.php-fig.org/) with some exceptions and additions.
 
 **Indentation whitespace**
-For some a religion, and others do not mind eighter way. First of all, lets make sure we talk about the same thing. Whitespace in indentation, and not in alignment. Some people like two spaces, some like four, some like a tab, and some have other wishes. One thing is for sure, a tab can always be converted later on into a certain amount of spaces, but when people mix indention and alignment in the code, and when people use different amount of spaces, it can be hard to standardize later on. Using tabs, different people can set up their editor to look like they like the best. And if they really want to, they can easially convert it their preferred amount of spaces. This is why, this project use a tab instead of spaces.
+For some a religion, and others do not mind eighter way. First of all, lets make sure we talk about the same thing. Whitespace in indentation, and not in alignment. Some people like two spaces, some like four, some like a tab, and some have other wishes. One thing is for sure, a tab can always be converted later on into a certain amount of spaces, but when people mix indention and alignment in the code, and when people use different amount of spaces, it can be hard to standardize later on. Using tabs, different people can set up their editor to look like they like the best. And if they really want to, they can easially convert it to their preferred amount of spaces. This is why, this project use a tab instead of spaces.
 
 **Function declaration vs function calling**
 For function declarations there should be a space before the first parentheses. In a function call there should not.
