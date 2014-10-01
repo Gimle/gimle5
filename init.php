@@ -11,7 +11,7 @@ require __DIR__ . '/object/' . str_replace('\\', '/', __NAMESPACE__) . '/system.
 
 spl_autoload_register(__NAMESPACE__ . '\\System::autoload');
 
-$config = parse_config_file(SITE_DIR . 'config.ini');
+$config = System::parseConfigFile(SITE_DIR . 'config.ini');
 
 $env_add = ((PHP_SAPI === 'cli') ? ENV_CLI : ENV_WEB);
 if (isset($config['env_mode'])) {
