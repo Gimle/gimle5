@@ -102,7 +102,7 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 unset($undefinedDir);
 
 if (!isset($config['base'])) {
-	trigger_error('No basepath set.', E_USER_ERROR);
+	throw new \Exception('No basepath set.');
 } elseif (!is_array($config['base'])) {
 	define('BASE_PATH', $config['base']);
 } elseif (is_array($config['base'])) {
@@ -128,7 +128,7 @@ if (!isset($config['base'])) {
 
 	foreach ($config['base'] as $key => $value) {
 		if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
-			trigger_error('Basepath configuration missing.', E_USER_ERROR);
+			throw new \Exception('Basepath configuration missing.');
 		}
 
 		/**
@@ -138,7 +138,17 @@ if (!isset($config['base'])) {
 		 */
 		define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
 		if ((isset($value['path'])) && (!defined(__NAMESPACE__ . '\\BASE_PATH_KEY'))) {
-			if (((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) || ((isset($value['regex'])) && (preg_match($value['regex'], $base)))) {
+			if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
+				define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
+				define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+			} elseif ((isset($value['regex'])) && (preg_match($value['regex'], $base, $matches))) {
+				foreach ($matches as $index => $match) {
+					if (is_int($index)) {
+						continue;
+					}
+					$value['path'] = str_replace('{' . $index . '}', $match, $value['path']);
+				}
+
 				/**
 				 * The public base path of the site.
 				 *
@@ -173,7 +183,7 @@ if (!isset($config['base'])) {
 		}
 	}
 	if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
-		trigger_error('No matching basepath configuration.', E_USER_ERROR);
+		throw new \Exception('No matching basepath configuration.');
 	}
 }
 unset($config['base']);
