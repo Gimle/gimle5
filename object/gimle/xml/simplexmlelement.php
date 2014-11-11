@@ -197,6 +197,74 @@ class SimpleXmlElement extends \SimpleXmlElement
 	}
 
 	/**
+	 * Insert inside at the first position.
+	 *
+	 * @param mixed $element SimpleXmlElement or xml string.
+	 * @param mixed $ref null = before self. string = xpath to prepend, SimpleXmlElement = reference to prepend.
+	 * @return void
+	 */
+	public function insertFirst ($element, $ref = null)
+	{
+		if (is_string($element)) {
+			$element = new SimpleXmlElement($element);
+		}
+
+		if ($ref === null) {
+			$dom = dom_import_simplexml($this);
+		} elseif (is_string($ref)) {
+			$sxml = $this->xpath($ref);
+			if (empty($sxml)) {
+				return false;
+			}
+			$dom = dom_import_simplexml($sxml[0]);
+		} elseif ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			$dom = dom_import_simplexml($ref);
+		} else {
+			reuturn;
+		}
+
+		$insert = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
+
+		$dom->insertBefore($insert, $dom->firstChild);
+	}
+
+	/**
+	 * Insert inside at the last position.
+	 *
+	 * @param mixed $element SimpleXmlElement or xml string.
+	 * @param mixed $ref null = before self. string = xpath to prepend, SimpleXmlElement = reference to prepend.
+	 * @return void
+	 */
+	public function insertLast ($element, $ref = null)
+	{
+		if (is_string($element)) {
+			$element = new SimpleXmlElement($element);
+		}
+
+		if ($ref === null) {
+			$dom = dom_import_simplexml($this);
+		} elseif (is_string($ref)) {
+			$sxml = $this->xpath($ref);
+			if (empty($sxml)) {
+				return false;
+			}
+			$dom = dom_import_simplexml($sxml[0]);
+		} elseif ((get_class($ref)) || (is_subclass_of($ref, 'SimpleXmlElement'))) {
+			$dom = dom_import_simplexml($ref);
+		} else {
+			reuturn;
+		}
+
+		$insert = $dom->ownerDocument->importNode(dom_import_simplexml($element), true);
+
+		if ($dom->nextSibling) {
+			$dom->insertBefore($insert, $dom->nextSibling);
+		} else {
+			$dom->appendChild($insert);
+		}
+	}
+
+	/**
 	 * Get the last child object.
 	 *
 	 * @param SimpleXmlElement $ref Reference node, or null if current is to be used.
