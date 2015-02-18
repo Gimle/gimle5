@@ -32,6 +32,33 @@ class DiskIO
 		return $name;
 	}
 
+	/**
+	 * Convert bytes to readable number.
+	 *
+	 * @param int $filesize Number of bytes.
+	 * @param int $decimals optional Number of decimals to include in string.
+	 * @return array containing prefix, float value and readable string.
+	 */
+	public static function bytesToArray ($filesize = 0, $decimals = 2)
+	{
+		$return = array();
+		$count = 0;
+		$units = array('', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y');
+		while ((($filesize / 1024) >= 1) && ($count < (count($units) - 1))) {
+			$filesize = $filesize / 1024;
+			$count++;
+		}
+		if (round($filesize, $decimals) === (float) 1024) {
+			$filesize = $filesize / 1024;
+			$count++;
+		}
+		$return['units']  = $units[$count];
+		$return['value']  = (float) $filesize;
+		$return['string1'] = round($filesize, $decimals) . (($count > 0) ? ' ' . $units[$count] : '');
+		$return['string2'] = round($filesize, $decimals) . ' ' . $units[$count] . 'B';
+		return $return;
+	}
+
 	public static function quoteSafe ($name)
 	{
 		return str_replace(array('`', '\'', '"'), array('\\`', '\\\'', '\\"'), $name);
