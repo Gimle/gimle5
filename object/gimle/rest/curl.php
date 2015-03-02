@@ -60,7 +60,7 @@ class Curl
 		}
 	}
 
-	public function query ($endpoint)
+	public function query ($endpoint, $method = false)
 	{
 		$ch = curl_init();
 
@@ -95,6 +95,10 @@ class Curl
 		}
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+		if ($method !== false) {
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+		}
 
 		$result = curl_exec($ch);
 

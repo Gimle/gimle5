@@ -79,4 +79,17 @@ class Fetch
 
 		return $return;
 	}
+
+	public function head ($endpoint)
+	{
+		$return = $this->wrapper->query($endpoint, 'HEAD');
+
+		foreach ($return['header'] as $header) {
+			if (substr($header, 0, 7) === 'HTTP/1.') {
+				$return['code'][] = (int)substr($header, 9, 3);
+			}
+		}
+
+		return $return;
+	}
 }
