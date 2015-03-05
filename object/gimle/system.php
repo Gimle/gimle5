@@ -120,4 +120,14 @@ class System
 		}
 		return $return;
 	}
+
+	/**
+	 * Checks for the maximum size uploads.
+	 *
+	 * @return int Maximum number of bytes.
+	 */
+	public static function getUploadLimit ()
+	{
+		return (int) min(DiskIO::stringToBytes(ini_get('post_max_size')), DiskIO::stringToBytes(ini_get('upload_max_filesize')));
+	}
 }
