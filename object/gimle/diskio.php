@@ -147,4 +147,31 @@ class DiskIO
 		}
 		return $return;
 	}
+
+	public static function setAttr ($name, $value, $ns = false)
+	{
+		if (!file_exists($name)) {
+			return false;
+		}
+
+		$exec = 'setfattr -n user.gimle -v ' . escapeshellarg(str_replace('\\', '\\\\', $value)) . ' ' . escapeshellarg($name);
+
+		exec($exec, $res);
+	}
+
+	public static function getAttr ($name, $ns = false)
+	{
+		if (!file_exists($name)) {
+			return false;
+		}
+
+		exec('getfattr -n user.gimle ' . escapeshellarg($name), $res);
+		$keyLen = strlen('user.gimle="');
+		if ((isset($res[1])) && (substr($res[1], 0, $keyLen) === 'user.gimle="') && (substr($res[1], -1, 1) === '"')) {
+			$result = substr($res[1], $keyLen, -1);
+			$result = str_replace(['\\\\\'', '\\"', '\\\\'], ['\'', '"', '\\'], $result);
+			return $result;
+		}
+		return false;
+	}
 }
