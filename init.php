@@ -245,3 +245,9 @@ if (Config::exists('module')) {
 		}
 	}
 }
+
+if (is_readable(SITE_DIR . 'autoload/')) {
+	foreach (new \RecursiveDirectoryIterator(SITE_DIR . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
+		include SITE_DIR . '/autoload/' . $fileInfo->getFilename();
+	}
+}
