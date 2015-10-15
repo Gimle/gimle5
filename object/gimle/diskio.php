@@ -17,13 +17,13 @@ class DiskIO
 	public static function safeFileName ($name)
 	{
 		$name = self::safeDirectoryName($name);
-		return str_replace(array('\\', '/'), Config::get('DiskIO.replaceChar'), $name);
+		return str_replace(['\\', '/'], Config::get('DiskIO.replaceChar'), $name);
 	}
 
 	public static function safeDirectoryName ($name)
 	{
 		Config::set('DiskIO.replaceChar', '★');
-		Config::set('DiskIO.safeName', array('/[*;]/', '/^[-]/'));
+		Config::set('DiskIO.safeName', ['/[*;]/', '/^[-]/']);
 
 		$regexs = Config::get('DiskIO.safeName');
 		foreach ($regexs as $regex) {
@@ -63,9 +63,9 @@ class DiskIO
 	 */
 	public static function bytesToArray ($filesize = 0, $decimals = 2)
 	{
-		$return = array();
+		$return = [];
 		$count = 0;
-		$units = array('', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y');
+		$units = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
 		while ((($filesize / 1024) >= 1) && ($count < (count($units) - 1))) {
 			$filesize = $filesize / 1024;
 			$count++;
