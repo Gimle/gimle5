@@ -81,11 +81,6 @@ class DiskIO
 		return $return;
 	}
 
-	public static function quoteSafe ($name)
-	{
-		return str_replace(array('`', '\'', '"'), array('\\`', '\\\'', '\\"'), $name);
-	}
-
 	public static function getModifiedAge ($name, $type = self::NONE)
 	{
 		if (file_exists($name)) {
