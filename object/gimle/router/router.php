@@ -22,6 +22,7 @@ class Router
 	const R_UNLINK = 512;
 	const R_PURGE = 1024;
 
+	const E_NONE = 0;
 	const E_ROUTE_NOT_FOUND = 1;
 	const E_METHOD_NOT_FOUND = 2;
 	const E_CANVAS_NOT_FOUND = 4;
@@ -33,11 +34,14 @@ class Router
 	private $canvas = false;
 	private $parseCanvas = true;
 	private $template = false;
-	private $routes = array();
+	private $routes = [];
 	private $fallback = false;
 
 	private $paramsHolder;
-	private $error = 0;
+	private $error = self::E_NONE;
+
+	private $url = [];
+	private $urlString = '';
 
 	public function __construct ()
 	{
@@ -78,6 +82,12 @@ class Router
 			default:
 				$this->requestMethod = 0;
 		}
+
+		if (isset($_SERVER['PATH_INFO'])) {
+			$this->urlString = trim($_SERVER['PATH_INFO'], '/');
+			$this->url = explode('/', $this->urlString);
+		}
+
 	}
 
 	public function setCanvas ($name, $parse = true)
@@ -91,15 +101,46 @@ class Router
 		$this->template = $name;
 	}
 
-	public function bindByRegex ($basePathKey, $path, $callback, $requestMethod = self::R_GET | self::R_POST | self::R_HEAD)
+	public function bindByRegex ($basePathKey, $path, $callback, $requestMethod = self::R_GET | self::R_HEAD)
 	{
 		if (($basePathKey === '*') || ($basePathKey === BASE_PATH_KEY)) {
 
-			$this->routes[$path] = array(
+			$this->routes[$path] = [
 				'callback' => $callback,
 				'requestMethod' => $requestMethod,
-			);
+			];
 		}
+	}
+
+
+	public function bind ($basePathKey, $path, $callback = false, $conditions = [], $requestMethod = self::R_GET | self::R_HEAD)
+	{
+		if (!is_array($conditions)) {
+			$requestMethod = $conditions;
+			$conditions = [];
+		}
+		$path = $this->bindToRegex($path, $conditions);
+
+		if (($basePathKey === '*') || ($basePathKey === BASE_PATH_KEY)) {
+
+			$this->routes[$path] = [
+				'callback' => $callback,
+				'requestMethod' => $requestMethod,
+			];
+		}
+	}
+
+	public function bindToRegex ($path, $conditions = [])
+	{
+		return '#^' . preg_replace_callback('#:([\w]+)\+?#', function ($match) use ($conditions) {
+			if (isset($conditions[$match[1]])) {
+				return '(?P<' . $match[1] . '>' . $conditions[$match[1]] . ')';
+			}
+			if (substr($match[0], -1) === '+') {
+				return '(?P<' . $match[1] . '>.+)';
+			}
+			return '(?P<' . $match[1] . '>[^/]+)';
+		}, str_replace(')', ')?', (string) $path)) . '$#u';
 	}
 
 	public function fallback ($basePathKey, $callback)
@@ -109,19 +150,32 @@ class Router
 		}
 	}
 
+	function page ($part = false) {
+		if ($part !== false) {
+			if (isset($this->url[$part])) {
+				return $this->url[$part];
+			}
+			return false;
+		}
+		return $this->url;
+	}
+
 	public function dispatch ()
 	{
 		$routeFound = false;
 		$methodMatch = false;
 
-		$url = Url::getInstance();
-
 		foreach ($this->routes as $path => $route) {
 
 			// Check if the current page matches the route.
-			if (preg_match($path, $url->getString(), $matches)) {
-				$url->setParts($matches);
+			if (preg_match($path, $this->urlString, $matches)) {
 				$routeFound = true;
+
+				foreach ($matches as $key => $url) {
+					if (!is_int($key)) {
+						$this->url[$key] = $url;
+					}
+				}
 
 				if ($this->requestMethod & $route['requestMethod']) {
 					$route['callback']();
@@ -150,14 +204,15 @@ class Router
 		if ($this->template !== false) {
 			if (is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
 				$this->template = SITE_DIR . 'template/' . $this->template . '.php';
-			} else {
+			}
+			else {
 				$this->template = false;
 				$this->error += self::E_TEMPALTE_NOT_FOUND;
 			}
 		}
 
-		if (($this->error & self::E_CANVAS_NOT_FOUND) || ($this->error & self::E_TEMPALTE_NOT_FOUND)) {
-			throw new Exception('Router error', $this->error);
+		if ($this->error !== 0) {
+			// throw new Exception('Router error', $this->error);
 		}
 
 		if ($this->canvas !== false) {
@@ -166,16 +221,32 @@ class Router
 				if ($params !== false) {
 					if ($this->template !== false) {
 						$this->paramsHolder = $params;
+
+						ob_start();
 						$return = include $this->template;
+						$content = ob_get_contents();
+						ob_end_clean();
+
+						if (!is_array($return)) {
+							echo $content;
+						}
+						else {
+							$return['content'] = $content;
+							header('Content-type: application/json; charset: ' . mb_internal_encoding());
+							echo json_encode($return);
+							$return = true;
+						}
 						if ($return !== true) {
 							if (is_array($this->paramsHolder)) {
 								$params = ArrayUtils::merge($this->paramsHolder, $return);
-							} else {
+							}
+							else {
 								$params = $return;
 							}
 							$this->dispatchFallback($params);
 						}
-					} elseif ($this->error !== 0) {
+					}
+					elseif ($this->error !== 0) {
 						$this->dispatchFallback($params);
 					}
 				}
