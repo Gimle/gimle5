@@ -89,11 +89,28 @@ class DiskIO
 		return false;
 	}
 
-	public static function getMimetype ($name, $type = self::NONE)
+	public static function getMimetype ($name)
 	{
 		$finfo = finfo_open(FILEINFO_MIME_TYPE);
 		$return = finfo_file($finfo, $name);
 		finfo_close($finfo);
+
+		if ($return === 'application/octet-stream') {
+			$size = filesize($name);
+			if ($size > 12) {
+				$fp = fopen($name, 'r');
+				$check1 = fread($fp, 4);
+				fseek($fp, 8);
+				$check2 = fread($fp, 4);
+
+				fclose($fp);
+
+				if (($check1 === 'RIFF') && (($check2 === 'WEBP'))) {
+					$return = 'image/webp';
+				}
+			}
+		}
+
 		return $return;
 	}
 
@@ -158,6 +175,18 @@ class DiskIO
 
 		exec($exec, $res);
 	}
+
+	public static function removeAttr ($name, $ns = false)
+	{
+		if (!file_exists($name)) {
+			return false;
+		}
+
+		$exec = 'setfattr -x user.gimle ' . escapeshellarg($name);
+
+		exec($exec, $res);
+	}
+
 
 	public static function getAttr ($name, $ns = false)
 	{
