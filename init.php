@@ -17,7 +17,8 @@ $env_add = ((PHP_SAPI === 'cli') ? ENV_CLI : ENV_WEB);
 if (isset($config['env_mode'])) {
 	define(__NAMESPACE__ . '\\ENV_MODE', $config['env_mode'] | $env_add);
 	unset($config['env_mode']);
-} else {
+}
+else {
 	/**
 	 * The current env level.
 	 *
@@ -66,7 +67,8 @@ if (isset($config['module'])) {
 if ((isset($config['path_info_override'])) && ($config['path_info_override'] !== false)) {
 	if ($config['path_info_override'] === true) {
 		$_SERVER['PATH_INFO'] = explode('?', urldecode($_SERVER['REQUEST_URI']));
-	} else {
+	}
+	else {
 		$_SERVER['PATH_INFO'] = explode('?', urldecode(substr($_SERVER['REQUEST_URI'], strlen($config['path_info_override']))));
 	}
 	$_SERVER['PATH_INFO'] = $_SERVER['PATH_INFO'][0];
@@ -83,10 +85,12 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 	if (isset($config['dir'][$dir])) {
 		define(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR', $config['dir'][$dir]);
 		unset($config['dir'][$dir]);
-	} else {
+	}
+	else {
 		if (isset($config['dir']['jail'])) {
 			define(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR', $config['dir']['jail'] . $dir . '/');
-		} else {
+		}
+		else {
 			/**
 			 * Sets constants for storage, chache and temp directories.
 			 *
@@ -101,97 +105,113 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 }
 unset($undefinedDir);
 
-if (!isset($config['base'])) {
-	throw new \Exception('No basepath set.');
-} elseif (!is_array($config['base'])) {
-	define('BASE_PATH', $config['base']);
-} elseif (is_array($config['base'])) {
-	$base = 'http';
-	$port = '';
-	if (isset($_SERVER['HTTPS'])) {
-		$base .= 's';
-		if ($_SERVER['SERVER_PORT'] !== '443') {
-			$port = ':' . $_SERVER['SERVER_PORT'];
-		}
-	} elseif ($_SERVER['SERVER_PORT'] !== '80') {
-		$port = ':' . $_SERVER['SERVER_PORT'];
+if (ENV_MODE & ENV_WEB) {
+	if (!isset($config['base'])) {
+		throw new \Exception('No basepath set.');
 	}
-	$base .= '://';
-	$host = explode(':', $_SERVER['HTTP_HOST']);
-	$base .= $host[0] . $port . '/';
-	unset($host, $port);
-
-	$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
-	if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
-		$base = substr($base, 0, -mb_strlen(basename($base)));
+	elseif (!is_array($config['base'])) {
+		define('BASE_PATH', $config['base']);
 	}
-
-	foreach ($config['base'] as $key => $value) {
-		if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
-			throw new \Exception('Basepath configuration missing.');
-		}
-
-		/**
-		 * The absolute path to the base of each of the base paths defined in config.
-		 *
-		 * <p>When working with multiple bases in config, each will be assigned to their own constant, starting with BASE_</p>
-		 */
-		define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
-		if ((isset($value['path'])) && (!defined(__NAMESPACE__ . '\\BASE_PATH_KEY'))) {
-			if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
-				define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
-				define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
-			} elseif ((isset($value['regex'])) && (preg_match($value['regex'], $base, $matches))) {
-				foreach ($matches as $index => $match) {
-					if (is_int($index)) {
-						continue;
-					}
-					$value['path'] = str_replace('{' . $index . '}', $match, $value['path']);
-				}
-
-				/**
-				 * The public base path of the site.
-				 *
-				 * This must be set in a config file.
-				 * When multiple domains is matched, it will match in the same order as in the config.
-				 * The default value will be calculated automatically.
-				 *
-				 * <p>Example single domain as string in config.ini</p>
-				 * <code>base = "http://example.com/"</code>
-				 *
-				 * <p>Example multiple domain with string start match in config.ini</p>
-				 * <code>[base.mobile]
-				 * start = "http://m.";
-				 * path = "http://m.example.com/"
-				 *
-				 * [base.default]
-				 * start = "http://";
-				 * path = "http://example.com/"</code>
-				 * <p>To search with a regular expression, change the "start" keyword with "regex".</p>
-				 *
-				 * @var string
-				 */
-				define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
-
-				/**
-				 * The key to the currenty matched base path from config.
-				 *
-				 * <p>When working with multiple bases in config, this will contain the key of the matched block.</p>
-				 */
-				define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+	elseif (is_array($config['base'])) {
+		$base = 'http';
+		$port = '';
+		if (isset($_SERVER['HTTPS'])) {
+			$base .= 's';
+			if ($_SERVER['SERVER_PORT'] !== '443') {
+				$port = ':' . $_SERVER['SERVER_PORT'];
 			}
 		}
+		elseif ($_SERVER['SERVER_PORT'] !== '80') {
+			$port = ':' . $_SERVER['SERVER_PORT'];
+		}
+		$base .= '://';
+		$host = explode(':', $_SERVER['HTTP_HOST']);
+		$base .= $host[0] . $port . '/';
+		unset($host, $port);
+
+		$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
+		if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
+			$base = substr($base, 0, -mb_strlen(basename($base)));
+		}
+
+		foreach ($config['base'] as $key => $value) {
+			if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
+				throw new \Exception('Basepath configuration missing.');
+			}
+
+			if (isset($value['key'])) {
+				$key = $value['key'];
+			}
+
+			/**
+			 * The absolute path to the base of each of the base paths defined in config.
+			 *
+			 * <p>When working with multiple bases in config, each will be assigned to their own constant, starting with BASE_</p>
+			 */
+			if (!defined(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key))) {
+				define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
+			}
+			if ((isset($value['path'])) && (!defined(__NAMESPACE__ . '\\BASE_PATH_KEY'))) {
+				if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
+					define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
+					define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+				}
+				elseif ((isset($value['regex'])) && (preg_match($value['regex'], $base, $matches))) {
+					foreach ($matches as $index => $match) {
+						if (is_int($index)) {
+							continue;
+						}
+						$value['path'] = str_replace('{' . $index . '}', $match, $value['path']);
+					}
+
+					/**
+					 * The public base path of the site.
+					 *
+					 * This must be set in a config file.
+					 * When multiple domains is matched, it will match in the same order as in the config.
+					 * The default value will be calculated automatically.
+					 *
+					 * <p>Example single domain as string in config.ini</p>
+					 * <code>base = "http://example.com/"</code>
+					 *
+					 * <p>Example multiple domain with string start match in config.ini</p>
+					 * <code>[base.mobile]
+					 * start = "http://m.";
+					 * path = "http://m.example.com/"
+					 *
+					 * [base.default]
+					 * start = "http://";
+					 * path = "http://example.com/"</code>
+					 * <p>To search with a regular expression, change the "start" keyword with "regex".</p>
+					 *
+					 * @var string
+					 */
+					define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
+
+					/**
+					 * The key to the currenty matched base path from config.
+					 *
+					 * <p>When working with multiple bases in config, this will contain the key of the matched block.</p>
+					 */
+					define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+				}
+			}
+		}
+		if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
+			throw new \Exception('No matching basepath configuration.');
+		}
 	}
-	if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
-		throw new \Exception('No matching basepath configuration.');
-	}
+	unset($config['base']);
 }
-unset($config['base']);
+elseif (isset($config['base'])) {
+	unset($config['base']);
+}
 
 if (isset($config['timezone'])) {
 	date_default_timezone_set($config['timezone']);
 	unset($config['timezone']);
-} else {
+}
+else {
 	date_default_timezone_set('CET');
 }
 
