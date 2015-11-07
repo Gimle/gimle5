@@ -196,6 +196,12 @@ if (ENV_MODE & ENV_WEB) {
 					define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
 				}
 			}
+			define(__NAMESPACE__ . '\\MAIN_SITE_ID', SITE_ID);
+			define(__NAMESPACE__ . '\\MAIN_SITE_DIR', SITE_DIR);
+			define(__NAMESPACE__ . '\\MAIN_BASE_PATH', BASE_PATH);
+			define(__NAMESPACE__ . '\\MAIN_TEMP_DIR', TEMP_DIR);
+			define(__NAMESPACE__ . '\\MAIN_CACHE_DIR', CACHE_DIR);
+			define(__NAMESPACE__ . '\\MAIN_STORAGE_DIR', STORAGE_DIR);
 		}
 		if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
 			throw new \Exception('No matching basepath configuration.');
