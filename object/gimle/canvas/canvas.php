@@ -3,12 +3,15 @@
  * Canvas Utilities.
  */
 
-namespace gimle;
+namespace gimle\canvas;
 
 /**
  * Canvas class.
  */
 class Canvas {
+
+	const E_RESERVED_NAME = 1;
+
 	/**
 	 * The template to use.
 	 *
@@ -39,6 +42,11 @@ class Canvas {
 		return $return;
 	}
 
+	public static function _override ($filename) {
+		ob_end_clean();
+		return self::_set($filename);
+	}
+
 	/**
 	 * Create the canvas from template.
 	 *
@@ -49,13 +57,13 @@ class Canvas {
 		ob_end_clean();
 
 		$template = self::$template;
-		$replaces = array('%content%');
-		$withs = array($content);
+		$replaces = ['%content%'];
+		$withs = [$content];
 
 		if (!empty(self::$magic)) {
 			foreach (self::$magic as $replace => $with) {
 				if (is_array($with)) {
-					$withTmp = array();
+					$withTmp = [];
 					foreach ($with as $value) {
 						if (!is_array($value)) {
 							$withTmp[] = $value;
@@ -68,6 +76,7 @@ class Canvas {
 				$withs[] = $with;
 			}
 		}
+
 		preg_match_all('/%[a-z]+%/', $template, $matches);
 		if (!empty($matches)) {
 			foreach ($matches[0] as $match) {
@@ -110,7 +119,7 @@ class Canvas {
 	 */
 	public static function __callStatic ($method, $params) {
 		if (substr($method, 0, 1) === '_') {
-			throw new \Exception('Methods starting with underscore is reserved for functionality, and should not be used for variables.');
+			throw new \Exception('Methods starting with underscore is reserved for functionality, and should not be used for variables.', self::E_RESERVED_NAME);
 		}
 
 		if (empty($params)) {

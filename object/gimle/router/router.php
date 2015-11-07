@@ -4,7 +4,9 @@ namespace gimle\router;
 use const gimle\SITE_DIR;
 use const gimle\BASE_PATH_KEY;
 
-use gimle\Canvas;
+use gimle\canvas\Canvas;
+use gimle\canvas\Exception as CanvasException;
+use gimle\template\Exception as TemplateException;
 
 class Router
 {
@@ -22,12 +24,12 @@ class Router
 	const R_UNLINK = 512;
 	const R_PURGE = 1024;
 
-	const E_NONE = 0;
 	const E_ROUTE_NOT_FOUND = 1;
 	const E_METHOD_NOT_FOUND = 2;
-	const E_CANVAS_NOT_FOUND = 4;
-	const E_TEMPALTE_NOT_FOUND = 8;
-	const E_FALLBACK_NOT_FOUND = 16;
+	const E_CANVAS_NOT_FOUND = 3;
+	const E_TEMPLATE_NOT_FOUND = 4;
+	const E_CANVAS_RETURN = 5;
+	const E_TEMPLATE_RETURN = 6;
 
 	private $requestMethod;
 
@@ -35,10 +37,8 @@ class Router
 	private $parseCanvas = true;
 	private $template = false;
 	private $routes = [];
-	private $fallback = false;
 
 	private $paramsHolder;
-	private $error = self::E_NONE;
 
 	private $url = [];
 	private $urlString = '';
@@ -143,13 +143,6 @@ class Router
 		}, str_replace(')', ')?', (string) $path)) . '$#u';
 	}
 
-	public function fallback ($basePathKey, $callback)
-	{
-		if (($basePathKey === '*') || ($basePathKey === BASE_PATH_KEY)) {
-			$this->fallback = $callback;
-		}
-	}
-
 	function page ($part = false) {
 		if ($part !== false) {
 			if (isset($this->url[$part])) {
@@ -186,84 +179,56 @@ class Router
 		}
 
 		if ($routeFound === false) {
-			$this->error += self::E_ROUTE_NOT_FOUND;
+			throw new Exception('Route not found.', self::E_ROUTE_NOT_FOUND);
 		}
 		if ($methodMatch === false) {
-			$this->error += self::E_METHOD_NOT_FOUND;
+			throw new Exception('Method not found.', self::E_METHOD_NOT_FOUND);
 		}
 
 		if ($this->canvas !== false) {
 			if (is_readable(SITE_DIR . 'canvas/' . $this->canvas . '.php')) {
 				$this->canvas = SITE_DIR . 'canvas/' . $this->canvas . '.php';
-			} else {
-				$this->canvas = false;
-				$this->error += self::E_CANVAS_NOT_FOUND;
-			}
-		}
-
-		if ($this->template !== false) {
-			if (is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
-				$this->template = SITE_DIR . 'template/' . $this->template . '.php';
 			}
 			else {
-				$this->template = false;
-				$this->error += self::E_TEMPALTE_NOT_FOUND;
+				throw new Exception('Canvas "' . $this->canvas . '" not found.', self::E_CANVAS_NOT_FOUND);
 			}
-		}
-
-		if ($this->error !== 0) {
-			// throw new Exception('Router error', $this->error);
 		}
 
 		if ($this->canvas !== false) {
 			if ($this->parseCanvas === true) {
-				$params = Canvas::_set($this->canvas);
-				if ($params !== false) {
+				$canvasResult = Canvas::_set($this->canvas);
+				if ((is_array($canvasResult)) && (count($canvasResult) === 2) && (is_string($canvasResult[0])) && (is_int($canvasResult[1]))) {
+					throw new CanvasException(...$canvasResult);
+				}
+				if ($canvasResult === true) {
 					if ($this->template !== false) {
-						$this->paramsHolder = $params;
+
+						if (!is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
+							throw new Exception('Template "' . $this->template . '" not found.', self::E_TEMPLATE_NOT_FOUND);
+						}
 
 						ob_start();
-						$return = include $this->template;
+						$templateResult = include SITE_DIR . 'template/' . $this->template . '.php';
 						$content = ob_get_contents();
 						ob_end_clean();
 
-						if (!is_array($return)) {
-							echo $content;
+						if ((is_array($templateResult)) && (count($templateResult) === 2) && (is_string($templateResult[0])) && (is_int($templateResult[1]))) {
+							throw new TemplateException(...$templateResult);
 						}
-						else {
-							$return['content'] = $content;
-							header('Content-type: application/json; charset: ' . mb_internal_encoding());
-							echo json_encode($return);
-							$return = true;
+						if ($templateResult !== true) {
+							throw new Exception('Invalid template return value.', self::E_TEMPLATE_RETURN);
 						}
-						if ($return !== true) {
-							if (is_array($this->paramsHolder)) {
-								$params = ArrayUtils::merge($this->paramsHolder, $return);
-							}
-							else {
-								$params = $return;
-							}
-							$this->dispatchFallback($params);
-						}
+
+						echo $content;
 					}
-					elseif ($this->error !== 0) {
-						$this->dispatchFallback($params);
-					}
+				}
+				else {
+					throw new Exception('Invalid canvas return value.', self::E_CANVAS_RETURN);
 				}
 				Canvas::_create();
 				return;
 			}
 			include $this->canvas;
 		}
-	}
-
-	private function dispatchFallback ($params)
-	{
-		if ($this->fallback !== false) {
-			call_user_func($this->fallback, $params, $this->error);
-			return;
-		}
-		$this->error += self::E_FALLBACK_NOT_FOUND;
-		throw new Exception('Router error', $this->error);
 	}
 }
