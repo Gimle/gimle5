@@ -103,36 +103,128 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 		mkdir(constant(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR'), 0777, true);
 	}
 }
-unset($undefinedDir);
+//unset($undefinedDir);
+
+$getBase = function () {
+	$base = 'http';
+	$port = '';
+	if (isset($_SERVER['HTTPS'])) {
+		$base .= 's';
+		if ($_SERVER['SERVER_PORT'] !== '443') {
+			$port = ':' . $_SERVER['SERVER_PORT'];
+		}
+	}
+	elseif ($_SERVER['SERVER_PORT'] !== '80') {
+		$port = ':' . $_SERVER['SERVER_PORT'];
+	}
+	$base .= '://';
+	$host = explode(':', $_SERVER['HTTP_HOST']);
+	$base .= $host[0] . $port . '/';
+	unset($host, $port);
+
+	$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
+	if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
+		$base = substr($base, 0, -mb_strlen(basename($base)));
+	}
+	return $base;
+};
 
 if (ENV_MODE & ENV_WEB) {
-	if (!isset($config['base'])) {
+	if (isset($config['subsite'])) {
+		if (isset($config['subsite']['path'])) {
+			define(__NAMESPACE__ . '\\SUBSITE_PATH', $config['subsite']['path']);
+			foreach ($config['subsite']['of'] as $id => $path) {
+				if (defined(__NAMESPACE__ . '\\BASE_PATH')) {
+					break;
+				}
+				$subConfig = System::parseConfigFile($path . 'config.ini');
+				if ((isset($subConfig['base'])) && (is_array($subConfig['base']))) {
+					$base = $getBase();
+					foreach ($subConfig['base'] as $key => $value) {
+						if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
+							continue;
+						}
+
+						if (isset($value['key'])) {
+							$key = $value['key'];
+						}
+
+						if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
+							if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
+
+								foreach (array('temp', 'cache', 'storage') as $dir) {
+									if (isset($subConfig['dir'][$dir])) {
+										define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $subConfig['dir'][$dir]);
+										unset($subConfig['dir'][$dir]);
+									}
+									else {
+										if (isset($subConfig['dir']['jail'])) {
+											if (!isset($orgJailSiteDir)) {
+												$orgJailSiteDir = \parse_ini_file($path . 'config.ini', true, INI_SCANNER_RAW);
+												if ((isset($orgJailSiteDir['dir']['jail'])) && ($orgJailSiteDir['dir']['jail'] === 'SITE_DIR')) {
+													$orgJailSiteDir = true;
+												}
+												else {
+													$orgJailSiteDir = false;
+												}
+											}
+											if ($orgJailSiteDir === true) {
+												define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $path . $dir . '/');
+											}
+											else {
+												define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $subConfig['dir']['jail'] . $dir . '/');
+											}
+										}
+										else {
+											/**
+											 * Sets constants for storage, chache and temp directories.
+											 *
+											 * @var string
+											 */
+											define(__NAMESPACE__ . '\\MAiN_' . strtoupper($dir) . '_DIR', sprintf($undefinedDir, $dir));
+										}
+									}
+									if (!is_readable(constant(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR'))) {
+										mkdir(constant(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR'), 0777, true);
+									}
+								}
+
+								foreach ($subConfig['base'] as $subKey => $subValue) {
+									if ((!isset($subValue['path'])) || ((!isset($subValue['start'])) && (!isset($subValue['regex'])))) {
+										continue;
+									}
+
+									if (isset($subValue['key'])) {
+										$subKey = $subValue['key'];
+									}
+
+									if (!defined(__NAMESPACE__ . '\\MAIN_BASE_' . mb_strtoupper($subKey))) {
+										define(__NAMESPACE__ . '\\MAIN_BASE_' . mb_strtoupper($subKey), $subValue['path']);
+										define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($subKey), $subValue['path'] . SUBSITE_PATH);
+									}
+								}
+								define(__NAMESPACE__ . '\\SUBSITE_OF_ID', $id);
+								define(__NAMESPACE__ . '\\MAIN_SITE_DIR', $path);
+								define(__NAMESPACE__ . '\\MAIN_SITE_ID', substr(trim($path, DIRECTORY_SEPARATOR), strrpos(trim($path, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR) + 1));
+
+								define(__NAMESPACE__ . '\\BASE_PATH', $value['path'] . SUBSITE_PATH);
+								define(__NAMESPACE__ . '\\MAIN_BASE_PATH', $value['path']);
+								define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	elseif (!isset($config['base'])) {
 		throw new \Exception('No basepath set.');
 	}
 	elseif (!is_array($config['base'])) {
 		define('BASE_PATH', $config['base']);
 	}
 	elseif (is_array($config['base'])) {
-		$base = 'http';
-		$port = '';
-		if (isset($_SERVER['HTTPS'])) {
-			$base .= 's';
-			if ($_SERVER['SERVER_PORT'] !== '443') {
-				$port = ':' . $_SERVER['SERVER_PORT'];
-			}
-		}
-		elseif ($_SERVER['SERVER_PORT'] !== '80') {
-			$port = ':' . $_SERVER['SERVER_PORT'];
-		}
-		$base .= '://';
-		$host = explode(':', $_SERVER['HTTP_HOST']);
-		$base .= $host[0] . $port . '/';
-		unset($host, $port);
-
-		$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
-		if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
-			$base = substr($base, 0, -mb_strlen(basename($base)));
-		}
+		$base = $getBase();
 
 		foreach ($config['base'] as $key => $value) {
 			if ((!isset($value['path'])) || ((!isset($value['start'])) && (!isset($value['regex'])))) {
@@ -151,7 +243,7 @@ if (ENV_MODE & ENV_WEB) {
 			if (!defined(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key))) {
 				define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
 			}
-			if ((isset($value['path'])) && (!defined(__NAMESPACE__ . '\\BASE_PATH_KEY'))) {
+			if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
 				if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
 					define(__NAMESPACE__ . '\\BASE_PATH', $value['path']);
 					define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
@@ -209,7 +301,7 @@ if (ENV_MODE & ENV_WEB) {
 	}
 	unset($config['base']);
 }
-elseif (isset($config['base'])) {
+if (isset($config['base'])) {
 	unset($config['base']);
 }
 
