@@ -242,6 +242,7 @@ if (ENV_MODE & ENV_WEB) {
 			 */
 			if (!defined(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key))) {
 				define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($key), $value['path']);
+				define(__NAMESPACE__ . '\\MAIN_BASE_' . mb_strtoupper($key), $value['path']);
 			}
 			if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
 				if ((isset($value['start'])) && ($value['start'] === substr($base, 0, strlen($value['start'])))) {
