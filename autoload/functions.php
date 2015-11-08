@@ -2,7 +2,7 @@
 namespace
 {
 	/**
-	 * This file loads some functions that is not included in older / any php versions.
+	 * This block loads some functions that is not included in older / any php versions.
 	 *
 	 */
 
