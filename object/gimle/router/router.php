@@ -85,7 +85,9 @@ class Router
 
 		if (isset($_SERVER['PATH_INFO'])) {
 			$this->urlString = trim($_SERVER['PATH_INFO'], '/');
-			$this->url = explode('/', $this->urlString);
+			if ($this->urlString !== '') {
+				$this->url = explode('/', $this->urlString);
+			}
 		}
 
 	}
