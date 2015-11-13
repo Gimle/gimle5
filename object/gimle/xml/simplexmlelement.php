@@ -496,7 +496,7 @@ class SimpleXmlElement extends \SimpleXmlElement
 	public function schemaValidate ($filename)
 	{
 		$dom = dom_import_simplexml($this);
-		return $dom->schemaValidate($filename);
+		return $dom->ownerDocument->schemaValidate($filename);
 	}
 
 	/**
