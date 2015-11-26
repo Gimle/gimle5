@@ -25,6 +25,23 @@ class SimpleXmlElement extends \SimpleXmlElement
 		return (bool) $dom->ownerDocument->insertBefore($pi, $dom->ownerDocument->firstChild);
 	}
 
+	public function asHtml ()
+	{
+		$dom_sxe = dom_import_simplexml($this);
+
+		$dom_output = new \DOMDocument('1.0');
+		$dom_output->formatOutput = true;
+		$dom_sxe = $dom_output->importNode($dom_sxe, true);
+		$dom_sxe = $dom_output->appendChild($dom_sxe);
+		// $res = $dom_output->saveHtml($dom_output);
+		$res = $dom_output->saveXml($dom_output);
+
+		$res = preg_replace('/^  |\G  /m', "\t", $res);
+		$res = preg_replace('/<\?xml[^\n]+\n/', '', $res);
+
+		return $res;
+	}
+
 	/**
 	 * Get the first child object.
 	 *
