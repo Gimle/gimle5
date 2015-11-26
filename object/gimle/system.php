@@ -22,7 +22,8 @@ class System
 			$file = $autoload['path'];
 			if ($autoload['toLowercase'] === true) {
 				$file .= str_replace('\\', '/', strtolower($name)) . '.php';
-			} else {
+			}
+			else {
 				$file .= str_replace('\\', '/', $name) . '.php';
 			}
 			if (is_readable($file)) {
@@ -68,7 +69,8 @@ class System
 					}
 					if ((substr($line[1], 0, 1) === '"') && (substr($line[1], -1, 1) === '"')) {
 						$value = str_replace(array('\\"', '\\\\'), array('"', '\\'), substr($line[1], 1, -1));
-					} elseif ((ctype_digit($line[1])) || ((substr($line[1], 0, 1) === '-') && (ctype_digit(substr($line[1], 1))))) {
+					}
+					elseif ((ctype_digit($line[1])) || ((substr($line[1], 0, 1) === '-') && (ctype_digit(substr($line[1], 1))))) {
 						$num = $line[1];
 						if (substr($num, 0, 1) === '-') {
 							$num = substr($line[1], 1);
@@ -76,44 +78,59 @@ class System
 						if (substr($num, 0, 1) === '0') {
 							if (substr($line[1], 0, 1) === '-') {
 								$value = -octdec($line[1]);
-							} else {
+							}
+							else {
 								$value = octdec($line[1]);
 							}
-						} else {
+						}
+						else {
 							$value = (int)$line[1];
 						}
 						unset($num);
-					} elseif ($line[1] === 'true') {
+					}
+					elseif ($line[1] === 'true') {
 						$value = true;
-					} elseif ($line[1] === 'false') {
+					}
+					elseif ($line[1] === 'false') {
 						$value = false;
-					} elseif ($line[1] === 'null') {
+					}
+					elseif ($line[1] === 'null') {
 						$value = null;
-					} elseif (preg_match('/^0[xX][0-9a-fA-F]+$/', $line[1])) {
+					}
+					elseif (preg_match('/^0[xX][0-9a-fA-F]+$/', $line[1])) {
 						$value = hexdec(substr($line[1], 2));
-					} elseif (preg_match('/^\-0[xX][0-9a-fA-F]+$/', $line[1])) {
+					}
+					elseif (preg_match('/^\-0[xX][0-9a-fA-F]+$/', $line[1])) {
 						$value = -hexdec(substr($line[1], 3));
-					} elseif (preg_match('/^0b[01]+$/', $line[1])) {
+					}
+					elseif (preg_match('/^0b[01]+$/', $line[1])) {
 						$value = bindec(substr($line[1], 2));
-					} elseif (preg_match('/^\-0b[01]+$/', $line[1])) {
+					}
+					elseif (preg_match('/^\-0b[01]+$/', $line[1])) {
 						$value = -bindec(substr($line[1], 3));
-					} elseif (filter_var($line[1], FILTER_VALIDATE_FLOAT) !== false) {
+					}
+					elseif (filter_var($line[1], FILTER_VALIDATE_FLOAT) !== false) {
 						$value = (float)$line[1];
-					} elseif (defined($line[1])) {
+					}
+					elseif (defined($line[1])) {
 						$value = constant($line[1]);
-					} elseif (defined(__NAMESPACE__ . '\\' . $line[1])) {
+					}
+					elseif (defined(__NAMESPACE__ . '\\' . $line[1])) {
 						$value = constant(__NAMESPACE__ . '\\' . $line[1]);
-					} else {
+					}
+					else {
 						throw new \Exception('Unknown value in ini file on line ' . ($linenum + 1) . ': ' . $linestr);
 					}
 					if (isset($value)) {
 						if (!isset($lastkey)) {
 							$return[$key] = $value;
-						} else {
+						}
+						else {
 							$return = ArrayUtils::merge($return, ArrayUtils::stringToNestedArray($lastkey, array($key => $value)));
 						}
 					}
-				} else {
+				}
+				else {
 					$lastkey = substr($key, 1, -1);
 				}
 			}
@@ -129,5 +146,15 @@ class System
 	public static function getUploadLimit ()
 	{
 		return (int) min(DiskIO::stringToBytes(ini_get('post_max_size')), DiskIO::stringToBytes(ini_get('upload_max_filesize')));
+	}
+
+	public static function exec ($command)
+	{
+		$filename = tempnam(TEMP_DIR, 'gimle_exec_');
+		touch($filename);
+		exec($command . ' 2> ' . $filename, $stout, $return);
+		$sterr = explode("\n", trim(file_get_contents($filename)));
+		unlink($filename);
+		return array('stout' => $stout, 'sterr' => $sterr, 'return' => $return);
 	}
 }
