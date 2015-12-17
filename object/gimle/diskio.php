@@ -203,4 +203,25 @@ class DiskIO
 		}
 		return false;
 	}
+
+	public static function delete ($path)
+	{
+		if (is_dir($path)) {
+			$objects = scandir($path);
+			foreach ($objects as $object) {
+				if (($object !== '.') && ($object !== '..')) {
+					if (is_dir($path . '/' . $object)) {
+						self::delete($path . '/'. $object);
+					}
+					else {
+						unlink($path . '/' . $object);
+					}
+				}
+			}
+			rmdir($path);
+		}
+		else {
+			unlink($path);
+		}
+	}
 }
