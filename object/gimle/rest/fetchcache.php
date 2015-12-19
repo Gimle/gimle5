@@ -15,6 +15,7 @@ class FetchCache extends Fetch
 	const JSON_OBJECT = 2;
 	const JSON_ARRAY = 3;
 	const PHP_SERIALIZED = 4;
+	const BINARY = 5;
 
 	private $folder = CACHE_DIR;
 	private $expect = self::TEXT;
@@ -40,6 +41,16 @@ class FetchCache extends Fetch
 	{
 		$this->expire = $search;
 		return $this;
+	}
+
+	public function age ($url)
+	{
+		$filename = $this->cacheName($url);
+
+		if (!file_exists($filename)) {
+			return false;
+		}
+		return DiskIO::getModifiedAge($filename);
 	}
 
 	/*
@@ -118,6 +129,8 @@ class FetchCache extends Fetch
 						$cacheIt = true;
 					}
 				}
+			} else {
+				$cacheIt = true;
 			}
 
 			if (($ttl !== null) && ($cacheIt === true)) {
@@ -139,6 +152,9 @@ class FetchCache extends Fetch
 			} else {
 				$return['reply'] = false;
 			}
+		} else {
+			$return['reply'] = file_get_contents($filename);;
+			$cacheHit = true;
 		}
 
 		$return['cacheHit'] = $cacheHit;
