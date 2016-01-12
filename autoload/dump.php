@@ -156,7 +156,12 @@ function var_dump ($var, $return = false, $title = false, $background = false, $
 					$doDump_indent = colorize('|', 'lightgray', $background, $mode) . '   ';
 					echo str_repeat($doDump_indent, $indent + 1) . colorize('[\'' . ($webmode === true ? htmlentities($key) : $key) . '\']', 'varname', $background, $mode);
 					echo ' ' . colorize('=', 'black', $background, $mode) . ' ';
-					echo colorize('*CALLABLE*', 'recursion', $background, $mode);
+					if (!is_string($var[$key])) {
+						echo colorize('*CALLABLE*', 'recursion', $background, $mode);
+					}
+					else {
+						echo colorize('\'' . (string) $var[$key] . '\'', 'recursion', $background, $mode);
+					}
 					echo "\n";
 					continue;
 				}
@@ -164,7 +169,12 @@ function var_dump ($var, $return = false, $title = false, $background = false, $
 					$doDump_indent = colorize('|', 'lightgray', $background, $mode) . '   ';
 					echo str_repeat($doDump_indent, $indent + 1) . colorize('[\'' . ($webmode === true ? htmlentities($key) : $key) . '\']', 'varname', $background, $mode);
 					echo ' ' . colorize('=', 'black', $background, $mode) . ' ';
-					echo colorize('*RECURSION*', 'recursion', $background, $mode);
+					if (!is_string($var[$key])) {
+						echo colorize('*RECURSION*', 'recursion', $background, $mode);
+					}
+					else {
+						echo colorize('\'' . (string) $var[$key] . '\'', 'recursion', $background, $mode);
+					}
 					echo "\n";
 					continue;
 				}
