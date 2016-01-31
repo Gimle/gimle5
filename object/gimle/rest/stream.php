@@ -93,6 +93,7 @@ class Stream
 					}
 					$options['http']['content'] .= "--" . $boundary . "--\r\n";
 				} elseif ($this->post !== false) {
+					$this->header['Content-Type'] = 'application/x-www-form-urlencoded';
 					$options['http']['content'] = http_build_query($this->post);
 				}
 			}
