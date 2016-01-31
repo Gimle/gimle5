@@ -306,6 +306,16 @@ if (isset($config['base'])) {
 	unset($config['base']);
 }
 
+$thisPath = BASE_PATH;
+if (isset($_SERVER['PATH_INFO'])) {
+	$pathInfo = trim($_SERVER['PATH_INFO'], '/');
+	if ($pathInfo !== '') {
+		$thisPath .= $pathInfo;
+	}
+}
+define(__NAMESPACE__ . '\\THIS_PATH', $thisPath);
+unset($thisPath);
+
 if (isset($config['timezone'])) {
 	date_default_timezone_set($config['timezone']);
 	unset($config['timezone']);
