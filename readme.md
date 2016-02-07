@@ -27,7 +27,7 @@ An open and including php micro framework in development.
 Requirements
 ------------
 - Any operating system.
-- php 5.6 (yes, this might be a bit high aim at the moment, but we are building for the future).
+- php 5.6
 - Different modules might have other requirements.
 
 
