@@ -5,9 +5,34 @@ class System
 {
 	private static $autoload = array(array('path' => SITE_DIR . 'module/gimle5/object/', 'toLowercase' => true, 'init' => false));
 
+	private static $modules = null;
+
 	public static function autoloadRegister ($path, $toLowercase = true, $initFunction = false)
 	{
 		self::$autoload[] = array('path' => $path, 'toLowercase' => $toLowercase, 'init' => $initFunction);
+	}
+
+	/**
+	 * Get modules included in this project.
+	 *
+	 * @param string $exclude
+	 * @return array
+	 */
+	public static function getModules (...$exclude)
+	{
+		if (self::$modules === null) {
+			self::$modules = [];
+			foreach (new \DirectoryIterator(SITE_DIR . 'module/') as $item) {
+				$name = $item->getFileName();
+				if ((substr($name, 0, 1) === '.') || (!$item->isDir()) || (!$item->isExecutable())) {
+					continue;
+				}
+				self::$modules[] = $name;
+			}
+			sort(self::$modules, SORT_NATURAL | SORT_FLAG_CASE);
+		}
+
+		return array_diff(self::$modules, $exclude);
 	}
 
 	/**
