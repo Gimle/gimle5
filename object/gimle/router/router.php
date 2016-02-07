@@ -5,6 +5,7 @@ use const gimle\SITE_DIR;
 use const gimle\BASE_PATH_KEY;
 
 use gimle\canvas\Canvas;
+use gimle\System;
 use gimle\canvas\Exception as CanvasException;
 use gimle\template\Exception as TemplateException;
 
@@ -188,10 +189,26 @@ class Router
 		}
 
 		if ($this->canvas !== false) {
+			$found = false;
 			if (is_readable(SITE_DIR . 'canvas/' . $this->canvas . '.php')) {
 				$this->canvas = SITE_DIR . 'canvas/' . $this->canvas . '.php';
+				$found = true;
 			}
 			else {
+				foreach (System::getModules('gimle5') as $module) {
+					if (is_readable(SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php')) {
+						$this->canvas = SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php';
+						$found = true;
+					}
+				}
+				if ($found === false) {
+					if (is_readable(SITE_DIR . 'module/gimle5/canvas/' . $this->canvas . '.php')) {
+						$this->canvas = SITE_DIR . 'module/gimle5/canvas/' . $this->canvas . '.php';
+						$found = true;
+					}
+				}
+			}
+			if ($found === false) {
 				throw new Exception('Canvas "' . $this->canvas . '" not found.', self::E_CANVAS_NOT_FOUND);
 			}
 		}
@@ -205,12 +222,25 @@ class Router
 				if ($canvasResult === true) {
 					if ($this->template !== false) {
 
-						if (!is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
+						$found = false;
+						if (is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
+							$this->template = SITE_DIR . 'template/' . $this->template . '.php';
+							$found = true;
+						}
+						else {
+							foreach (System::getModules('gimle5') as $module) {
+								if (is_readable(SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php')) {
+									$this->template = SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php';
+									$found = true;
+								}
+							}
+						}
+						if ($found === false) {
 							throw new Exception('Template "' . $this->template . '" not found.', self::E_TEMPLATE_NOT_FOUND);
 						}
 
 						ob_start();
-						$templateResult = include SITE_DIR . 'template/' . $this->template . '.php';
+						$templateResult = include $this->template;
 						$content = ob_get_contents();
 						ob_end_clean();
 
