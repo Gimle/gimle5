@@ -165,6 +165,10 @@ if (ENV_MODE & ENV_WEB) {
 								}
 							}
 
+							define(__NAMESPACE__ . '\\SUBSITE_OF_ID', $id);
+							define(__NAMESPACE__ . '\\MAIN_SITE_DIR', $path);
+							define(__NAMESPACE__ . '\\MAIN_SITE_ID', substr(trim($path, DIRECTORY_SEPARATOR), strrpos(trim($path, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR) + 1));
+
 							foreach (array('temp', 'cache', 'storage') as $dir) {
 								if (isset($subConfig['dir'][$dir])) {
 									define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $subConfig['dir'][$dir]);
@@ -172,29 +176,16 @@ if (ENV_MODE & ENV_WEB) {
 								}
 								else {
 									if (isset($subConfig['dir']['jail'])) {
-										if (!isset($orgJailSiteDir)) {
-											$orgJailSiteDir = \parse_ini_file($path . 'config.ini', true, INI_SCANNER_RAW);
-											if ((isset($orgJailSiteDir['dir']['jail'])) && ($orgJailSiteDir['dir']['jail'] === 'SITE_DIR')) {
-												$orgJailSiteDir = true;
-											}
-											else {
-												$orgJailSiteDir = false;
-											}
-										}
-										if ($orgJailSiteDir === true) {
-											define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $path . $dir . '/');
-										}
-										else {
-											define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $subConfig['dir']['jail'] . $dir . '/');
-										}
+										define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', $path . $dir . '/');
 									}
 									else {
+										$undefinedMainDir = sys_get_temp_dir() . '/gimle/%s/' . MAIN_SITE_ID . '/';
 										/**
 										 * Sets constants for storage, chache and temp directories.
 										 *
 										 * @var string
 										 */
-										define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', sprintf($undefinedDir, $dir));
+										define(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR', sprintf($undefinedMainDir, $dir));
 									}
 								}
 								if (!is_readable(constant(__NAMESPACE__ . '\\MAIN_' . strtoupper($dir) . '_DIR'))) {
@@ -225,9 +216,6 @@ if (ENV_MODE & ENV_WEB) {
 									define(__NAMESPACE__ . '\\BASE_' . mb_strtoupper($subKey), $subValue['path'] . SUBSITE_PATH);
 								}
 							}
-							define(__NAMESPACE__ . '\\SUBSITE_OF_ID', $id);
-							define(__NAMESPACE__ . '\\MAIN_SITE_DIR', $path);
-							define(__NAMESPACE__ . '\\MAIN_SITE_ID', substr(trim($path, DIRECTORY_SEPARATOR), strrpos(trim($path, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR) + 1));
 
 							if ((isset($value['regex'])) && (isset($matches))) {
 								foreach ($matches as $index => $match) {
