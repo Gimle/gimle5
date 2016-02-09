@@ -8,6 +8,8 @@ class Curl
 
 	private $post = false;
 
+	private $multipart = false;
+
 	public function reset ($full = false)
 	{
 		if ($full === true) {
@@ -55,6 +57,7 @@ class Curl
 			$finfo = finfo_open(FILEINFO_MIME_TYPE | FILEINFO_MIME_ENCODING);
 			$mimetype = finfo_file($finfo, $path);
 			$this->post[$key] = new \CurlFile($path, $mimetype, $name);
+			$this->multipart = true;
 		} else {
 			trigger_error('Can not send file when raw data is sendt.');
 		}
@@ -74,7 +77,12 @@ class Curl
 			if (!isset($this->header['Expect'])) {
 				$this->header['Expect'] = '';
 			}
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $this->post);
+			if ($this->multipart === false) {
+				curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($this->post));
+			}
+			else {
+				curl_setopt($ch, CURLOPT_POSTFIELDS, $this->post);
+			}
 		}
 		if (!empty($this->header)) {
 			curl_setopt($ch, CURLOPT_HTTPHEADER, array_map(function ($v, $k) {
