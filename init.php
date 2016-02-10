@@ -229,6 +229,13 @@ if (ENV_MODE & ENV_WEB) {
 							define(__NAMESPACE__ . '\\BASE_PATH', $value['path'] . SUBSITE_PATH);
 							define(__NAMESPACE__ . '\\MAIN_BASE_PATH', $value['path']);
 							define(__NAMESPACE__ . '\\BASE_PATH_KEY', $key);
+							define(__NAMESPACE__ . '\\IS_SUBSITE', true);
+
+							if (is_readable(MAIN_SITE_DIR . 'config.php')) {
+								$subConfig = ArrayUtils::merge(include MAIN_SITE_DIR . 'config.php', $subConfig, true);
+							}
+
+							MainConfig::setAll($subConfig);
 						}
 					}
 				}
@@ -236,15 +243,17 @@ if (ENV_MODE & ENV_WEB) {
 		}
 	}
 
-	if (defined(__NAMESPACE__ . '\\SUBSITE_OF_ID')) {
+	if (defined(__NAMESPACE__ . '\\IS_SUBSITE')) {
 	}
 	elseif (!isset($config['base'])) {
 		throw new \Exception('No basepath set.');
 	}
 	elseif (!is_array($config['base'])) {
 		define('BASE_PATH', $config['base']);
+		define(__NAMESPACE__ . '\\IS_SUBSITE', false);
 	}
 	elseif (is_array($config['base'])) {
+		define(__NAMESPACE__ . '\\IS_SUBSITE', false);
 		$base = $getBase();
 
 		if (isset($matches)) {

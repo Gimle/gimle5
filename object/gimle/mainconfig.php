@@ -1,7 +1,7 @@
 <?php
 namespace gimle;
 
-class Config
+class MainConfig
 {
 	private static $config = [];
 
