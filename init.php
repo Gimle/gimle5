@@ -235,6 +235,9 @@ if (ENV_MODE & ENV_WEB) {
 			}
 		}
 	}
+
+	if (defined(__NAMESPACE__ . '\\SUBSITE_OF_ID')) {
+	}
 	elseif (!isset($config['base'])) {
 		throw new \Exception('No basepath set.');
 	}
