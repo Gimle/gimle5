@@ -123,7 +123,7 @@ $getBase = function () {
 	unset($host, $port);
 
 	if (isset($_SERVER['PATH_INFO'])) {
-		$base .= ltrim(substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['PATH_INFO'])), '/') . '/';
+		$base .= ltrim(substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['PATH_INFO'])), '/');
 	}
 	else {
 		$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
