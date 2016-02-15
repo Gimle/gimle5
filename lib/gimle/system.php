@@ -3,7 +3,7 @@ namespace gimle;
 
 class System
 {
-	private static $autoload = array(array('path' => SITE_DIR . 'module/gimle5/object/', 'toLowercase' => true, 'init' => false));
+	private static $autoload = array(array('path' => SITE_DIR . 'module/gimle5/lib/', 'toLowercase' => true, 'init' => false));
 
 	private static $modules = null;
 

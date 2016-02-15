@@ -7,7 +7,7 @@ foreach (new \RecursiveDirectoryIterator(__DIR__ . '/autoload/', \FilesystemIter
 	include __DIR__ . '/autoload/' . $fileInfo->getFilename();
 }
 
-require __DIR__ . '/object/' . str_replace('\\', '/', __NAMESPACE__) . '/system.php';
+require __DIR__ . '/lib/' . str_replace('\\', '/', __NAMESPACE__) . '/system.php';
 
 spl_autoload_register(__NAMESPACE__ . '\\System::autoload');
 
@@ -56,12 +56,6 @@ unset($env_add);
 
 if (is_readable(SITE_DIR . 'config.php')) {
 	$config = ArrayUtils::merge(include SITE_DIR . 'config.php', $config, true);
-}
-
-if (isset($config['module'])) {
-	foreach ($config['module'] as $name => $value) {
-		System::autoloadRegister(SITE_DIR . 'module/' . $name . '/object/');
-	}
 }
 
 if ((isset($config['path_info_override'])) && ($config['path_info_override'] !== false)) {
@@ -410,19 +404,25 @@ if ((isset($config['server']['override'])) && (is_array($config['server']['overr
 }
 
 Config::setAll($config);
+
 unset($config);
 
-if (Config::exists('module')) {
-	foreach (Config::get('module') as $name => $value) {
-		if (is_readable(SITE_DIR . 'module/' . $name . '/autoload/')) {
-			foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
-				include SITE_DIR . 'module/' . $name . '/autoload/' . $fileInfo->getFilename();
-			}
+foreach (System::getModules('gimle5') as $name) {
+	if (is_executable(SITE_DIR . 'module/' . $name . '/autoload/')) {
+		foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
+			include SITE_DIR . 'module/' . $name . '/autoload/' . $fileInfo->getFilename();
 		}
+	}
+	if (is_executable(SITE_DIR . 'module/' . $name . '/lib/')) {
+		System::autoloadRegister(SITE_DIR . 'module/' . $name . '/lib/');
 	}
 }
 
-if (is_readable(SITE_DIR . 'autoload/')) {
+if (is_executable(SITE_DIR . 'lib/')) {
+	System::autoloadRegister(SITE_DIR . 'lib/');
+}
+
+if (is_executable(SITE_DIR . 'autoload/')) {
 	foreach (new \RecursiveDirectoryIterator(SITE_DIR . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
 		include SITE_DIR . '/autoload/' . $fileInfo->getFilename();
 	}
