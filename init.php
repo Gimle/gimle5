@@ -116,9 +116,14 @@ $getBase = function () {
 	$base .= $host[0] . $port . '/';
 	unset($host, $port);
 
-	$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
-	if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
-		$base = substr($base, 0, -mb_strlen(basename($base)));
+	if (isset($_SERVER['PATH_INFO'])) {
+		$base .= ltrim(substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['PATH_INFO'])), '/');
+	}
+	else {
+		$base .= ltrim($_SERVER['SCRIPT_NAME'], '/');
+		if (mb_strlen(basename($_SERVER['SCRIPT_NAME'])) > 0) {
+			$base = substr($base, 0, -mb_strlen(basename($base)));
+		}
 	}
 	return $base;
 };
