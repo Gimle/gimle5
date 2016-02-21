@@ -151,7 +151,7 @@ class System
 							$return[$key] = $value;
 						}
 						else {
-							$return = ArrayUtils::merge($return, ArrayUtils::stringToNestedArray($lastkey, array($key => $value)));
+							$return = ArrayUtils::merge($return, ArrayUtils::stringToNestedArray($lastkey, [$key => $value]));
 						}
 					}
 				}
