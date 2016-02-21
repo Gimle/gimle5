@@ -1,6 +1,6 @@
 <?php
 namespace gimle\router;
 
-class Exception extends \Exception
+class Exception extends \gimle\Exception
 {
 }
