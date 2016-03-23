@@ -6,44 +6,30 @@ use gimle\Config;
 /**
  * MySQL Utilities class.
  */
-class Mysql {
-	/**
-	 * Array holding the initialized mysql connections.
-	 *
-	 * @var array
-	 */
-	private static $sqlconnections = array();
-	/**
-	 * Create a new or return already initialized database object.
-	 *
-	 * @param string $key the database key.
-	 * @return object Database object.
-	 */
-	public static function get ($key) {
-		if ((!array_key_exists($key, self::$sqlconnections)) || (!self::$sqlconnections[$key] instanceof Mysqlicore)) {
-			self::$sqlconnections[$key] = new Mysqlicore(Config::get('mysql.' . $key));
-		}
-		return self::$sqlconnections[$key];
-	}
-}
+class Mysql extends \mysqli
+{
+	use \gimle\trick\Multiton;
 
-/**
- * MySQL Core class.
- */
-class Mysqlicore extends \mysqli {
 	/**
 	 * Information of the performed queries.
 	 *
 	 * @var array
 	 */
-	private $queryCache = array();
+	private $queryCache = [];
 	/**
 	 * Create a new Mysqli object.
 	 *
 	 * @param array $params
 	 * @return object
 	 */
-	public function __construct (array $params = array ()) {
+	public function __construct ($key)
+	{
+		mysqli_report(MYSQLI_REPORT_STRICT);
+
+		$params = Config::get('mysql.' . $key);
+		if ($params === null) {
+			$params = [];
+		}
 		parent::init();
 		$params['pass'] = (isset($params['pass']) ? $params['pass'] : '');
 		$params['user'] = (isset($params['user']) ? $params['user'] : 'root');
@@ -67,12 +53,15 @@ class Mysqlicore extends \mysqli {
 	 * @param mixed $mode bool|null true = on, false = off, null (Default) = return current state.
 	 * @return mixed bool|array
 	 */
-	public function cache ($mode = null) {
+	public function cache ($mode = null)
+	{
 		if ($mode === true) {
 			return parent::query("SET SESSION query_cache_type = ON;");
-		} elseif ($mode === false) {
+		}
+		elseif ($mode === false) {
 			return parent::query("SET SESSION query_cache_type = OFF;");
-		} else {
+		}
+		else {
 			return parent::query("SHOW VARIABLES LIKE 'query_cache_type';")->fetch_assoc();
 		}
 	}
@@ -85,17 +74,18 @@ class Mysqlicore extends \mysqli {
 	 * @param mixed $resultmode null|string
 	 * @return mixed bool|object
 	 */
-	public function query ($query, $resultmode = null) {
+	public function query ($query, $resultmode = null)
+	{
 		$t = microtime(true);
 		$error = false;
 		if (!$result = parent::query($query, $resultmode)) {
 			$append = self::debug_backtrace('query');
 			trigger_error('MySQL query error: (' . $this->errno . ') ' . $this->error . ' in "' . $query . '".' . $append);
-			$error = array('errno' => $this->errno, 'error' => $this->error);
+			$error = ['errno' => $this->errno, 'error' => $this->error];
 		}
 		$mysqliresult = (is_bool($result) ? $result : new Mysqliresult($result));
 		$t = microtime(true) - $t;
-		$this->queryCache[] = array('query' => $query, 'time' => $t, 'rows' => $this->affected_rows, 'error' => $error);
+		$this->queryCache[] = ['query' => $query, 'time' => $t, 'rows' => $this->affected_rows, 'error' => $error];
 		return $mysqliresult;
 	}
 	/**
@@ -103,10 +93,12 @@ class Mysqlicore extends \mysqli {
 	 *
 	 * @return string
 	 */
-	public function explain () {
+	public function explain ()
+	{
 		if (!isset(System::$config['common']['background'])) {
 			$background = 'white';
-		} else {
+		}
+		else {
 			$background = System::$config['common']['background'];
 		}
 		$textcolor = colorize('', 'black', $background, true);
@@ -119,7 +111,7 @@ class Mysqlicore extends \mysqli {
 		$return = '';
 		$sqlnum = 0;
 		$sqltime = 0;
-		$doubles = array();
+		$doubles = [];
 		foreach ($this->queryCache as $query) {
 			$doubles[] = $query['query'];
 			$sqltime += $query['time'];
@@ -129,36 +121,39 @@ class Mysqlicore extends \mysqli {
 				$return .= '<table border="1" style="font-size: 12px; width: 100%; border-collapse: collapse;">';
 				$return .= '<tr><td colspan="12" style="font-family: monospace; font-size: 11px;' . $textcolor . '">' . $query['query'] . '</td></tr>';
 				$return .= '<tr><td colspan="12"' . $textstyle . '>Affected rows: ' . $query['rows'] . ', Query Time: ' . $query['time'] . '</td></tr><tr>';
-			} else {
+			}
+			else {
 				$return .= colorize($query['query'], 'black', $background) . "\n";
 				$return .= colorize('Affected rows: ' . $query['rows'] . ', Query Time: ' . $query['time'], 'black', $background) . "\n";
 			}
 			$temp = '';
 			if (($query['error'] === false) && (preg_match('/^SELECT/i', $query['query']) > 0)) {
-				$charcount = array();
-				$fieldsarray = array();
+				$charcount = [];
+				$fieldsarray = [];
 				$res = parent::query('EXPLAIN ' . $query['query']);
 				$fields = $res->fetch_fields();
 				foreach ($fields as $field) {
 					if (ENV_LEVEL & ENV_WEB) {
 						$return .= '<th' . $textstyle . '>' . $field->name . '</th>';
-					} else {
+					}
+					else {
 						$fieldsarray[] = $field->name;
 					}
 				}
 				if (ENV_LEVEL & ENV_WEB) {
 					$return .= '</tr>';
 				}
-				$rowarray = array();
+				$rowarray = [];
 				while ($row = $res->fetch_assoc()) {
-					$subrowarray = array();
+					$subrowarray = [];
 					$i = 0;
 					foreach ($row as $key => $value) {
 						if (ENV_LEVEL & ENV_CLI) {
 							$thiscount = (($value === null) ? 4 : strlen($value));
 							if (isset($charcount[$key])) {
 								$charcount[$key] = max($thiscount, $charcount[$key]);
-							} else {
+							}
+							else {
 								$charcount[$key] = max($thiscount, strlen($fieldsarray[$i]));
 							}
 							$subrowarray[$key] = $value;
@@ -176,12 +171,15 @@ class Mysqlicore extends \mysqli {
 				if ((ENV_LEVEL & ENV_WEB) && ($temp === '')) {
 					if (preg_match('/^SELECT/i', $query['query']) > 0) {
 						$return .= '<tr><td colspan="12"' . $errstyle . '>Erronymous query.' . '</td></tr>';
-					} else {
+					}
+					else {
 						$return .= '<tr><td colspan="12"' . $errstyle . '>Unknown query.' . '</td></tr>';
 					}
-				} elseif (ENV_LEVEL & ENV_WEB) {
+				}
+				elseif (ENV_LEVEL & ENV_WEB) {
 					$return .= $temp;
-				} elseif (!empty($rowarray)) {
+				}
+				elseif (!empty($rowarray)) {
 					$return .= '+';
 					foreach ($charcount as $value) {
 						$return .= str_repeat('-', $value + 2) . '+';
@@ -205,25 +203,31 @@ class Mysqlicore extends \mysqli {
 						$return .= str_repeat('-', $value + 2) . '+';
 					}
 					$return .= "\n";
-				} else {
+				}
+				else {
 					if (preg_match('/^SELECT/i', $query['query']) > 0) {
 						$return .= colorize('Erronymous query.', 'error', $background) . "\n";
-					} else {
+					}
+					else {
 						$return .= colorize('Unknown query.', 'error', $background) . "\n";
 					}
 				}
-			} elseif ($query['error'] !== false) {
+			}
+			elseif ($query['error'] !== false) {
 				if (ENV_LEVEL & ENV_WEB) {
 					$return .= '<tr><td colspan="12"' . $errstyle . '>Error (' . $query['error']['errno'] . '): ' . $query['error']['error'] . '</td></tr>';
-				} else {
+				}
+				else {
 					$return .= colorize('Error (' . $query['error']['errno'] . '): ' . $query['error']['error'], 'error', $background) . "\n";
 				}
-			} elseif (ENV_LEVEL & ENV_WEB) {
+			}
+			elseif (ENV_LEVEL & ENV_WEB) {
 				$return .= $temp;
 			}
 			if (ENV_LEVEL & ENV_WEB) {
 				$return .= '</table><br>';
-			} else {
+			}
+			else {
 				$return .= "\n";
 			}
 		}
@@ -240,10 +244,12 @@ class Mysqlicore extends \mysqli {
 	 * @param string $function
 	 * @return string
 	 */
-	private function debug_backtrace ($function) {
+	private function debug_backtrace ($function)
+	{
 		if (ini_get('html_errors') === '') {
 			$template = ' in %s on line %s';
-		} else {
+		}
+		else {
 			$template = ' in <b>%s</b> on line <b>%s</b>';
 		}
 		$backtrace = debug_backtrace();
@@ -268,7 +274,8 @@ class Mysqlicore extends \mysqli {
 /**
  * MySQL Result class.
  */
-class Mysqliresult {
+class Mysqliresult
+{
 	/**
 	 * Result set
 	 *
@@ -281,7 +288,8 @@ class Mysqliresult {
 	 * @param \mysqli_result $result mysqli_result Object
 	 * @return object mysqli_result Object
 	 */
-	public function __construct (\mysqli_result $result) {
+	public function __construct (\mysqli_result $result)
+	{
 		$this->result = $result;
 	}
 	/**
@@ -289,7 +297,8 @@ class Mysqliresult {
 	 *
 	 * @return array
 	 */
-	public function get_assoc () {
+	public function get_assoc ()
+	{
 		for ($i = 0; $i < $this->field_count; $i++) {
 			$tmp = $this->fetch_field_direct($i);
 			$finfo[$tmp->name] = $tmp->type;
@@ -301,9 +310,11 @@ class Mysqliresult {
 		}
 		foreach ($result as $key => $value) {
 			if ($result[$key] === null) {
-			} elseif (in_array($finfo[$key], array(1, 2, 3, 8, 9))) {
+			}
+			elseif (in_array($finfo[$key], [1, 2, 3, 8, 9])) {
 				$result[$key] = (int)$result[$key];
-			} elseif (in_array($finfo[$key], array(4, 5, 246))) {
+			}
+			elseif (in_array($finfo[$key], [4, 5, 246])) {
 				$result[$key] = (float)$result[$key];
 			}
 		}
@@ -316,8 +327,9 @@ class Mysqliresult {
 	 * @param array $arguments
 	 * @return mixed
 	 */
-	public function __call ($name, $arguments) {
-		return call_user_func_array(array($this->result, $name), $arguments);
+	public function __call ($name, $arguments)
+	{
+		return call_user_func_array([$this->result, $name], $arguments);
 	}
 	/**
 	 * Set a value.
@@ -326,7 +338,8 @@ class Mysqliresult {
 	 * @param mixed $value
 	 * @return void
 	 */
-	public function __set ($name, $value) {
+	public function __set ($name, $value)
+	{
 		$this->result->$name = $value;
 	}
 	/**
@@ -335,7 +348,8 @@ class Mysqliresult {
 	 * @param string $name
 	 * @return mixed
 	 */
-	public function __get ($name) {
+	public function __get ($name)
+	{
 		return $this->result->$name;
 	}
 }
