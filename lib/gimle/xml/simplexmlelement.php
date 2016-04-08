@@ -348,6 +348,44 @@ class SimpleXmlElement extends \SimpleXmlElement
 	}
 
 	/**
+	 * Escape a string for use in xpath queries.
+	 *
+	 * @param string Input string.
+	 * @param string Escape character (default = ").
+	 * @return string
+	 */
+	public function real_escape_string ($escapestr, $escapechar = '"')
+	{
+		if ((strpos($escapestr, '\'') !== false) || (strpos($escapestr, '"') !== false)) {
+			$quotes = ['\'', '"'];
+			$parts = [];
+			$current = '';
+			foreach (str_split($escapestr) as $character) {
+				if (in_array($character, $quotes)) {
+					if ($current !== '') {
+						$parts[] = '\'' . $current . '\'';
+					}
+					if ($character === '\'') {
+						$parts[] = '"' . $character . '"';
+					}
+					else {
+						$parts[] = '\'' . $character . '\'';
+					}
+					$current = '';
+				}
+				else {
+					$current .= $character;
+				}
+			}
+			if ($current) {
+				$parts[] = '\'' . $current . '\'';
+			}
+			return 'concat(' . implode(',', $parts) . ')';
+		}
+		return $escapechar . $escapestr . $escapechar;
+	}
+
+	/**
 	 * Remove a given node.
 	 *
 	 * Can not remove root node.
