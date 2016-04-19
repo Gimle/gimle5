@@ -2,6 +2,7 @@
 namespace gimle\sql;
 
 use gimle\Config;
+use gimle\MainConfig;
 
 /**
  * MySQL Utilities class.
@@ -27,6 +28,9 @@ class Mysql extends \mysqli
 		mysqli_report(MYSQLI_REPORT_STRICT);
 
 		$params = Config::get('mysql.' . $key);
+		if (($params === null) && (IS_SUBSITE)) {
+			$params = MainConfig::get('mysql.' . $key);
+		}
 		if ($params === null) {
 			$params = [];
 		}
