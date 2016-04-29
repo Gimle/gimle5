@@ -16,6 +16,11 @@ trait Multiton
 		return self::$instances[$identifier];
 	}
 
+	public static function getInstances ()
+	{
+		return array_keys(self::$instances);
+	}
+
 	private function __construct ()
 	{
 	}
