@@ -3,6 +3,7 @@ namespace gimle\sql;
 
 use gimle\Config;
 use gimle\MainConfig;
+use function gimle\colorize;
 
 /**
  * MySQL Utilities class.
@@ -92,6 +93,23 @@ class Mysql extends \mysqli
 		$this->queryCache[] = ['query' => $query, 'time' => $t, 'rows' => $this->affected_rows, 'error' => $error];
 		return $mysqliresult;
 	}
+
+	public function getQueryTotals ()
+	{
+		$return = ['count' => 0, 'time' => 0, 'doubles' => false];
+		$doubles = [];
+		foreach ($this->queryCache as $query) {
+			$doubles[] = $query['query'];
+			$return['time'] += $query['time'];
+			$return['count']++;
+		}
+		if (count(array_unique($doubles)) < count($doubles)) {
+			$return['doubles'] = true;
+		}
+
+		return $return;
+	}
+
 	/**
 	 * Explain the performed queries.
 	 *
@@ -99,14 +117,8 @@ class Mysql extends \mysqli
 	 */
 	public function explain ()
 	{
-		if (!isset(System::$config['common']['background'])) {
-			$background = 'white';
-		}
-		else {
-			$background = System::$config['common']['background'];
-		}
-		$textcolor = colorize('', 'black', $background, true);
-		$errstyle = 'style="' . colorize('', 'error', $background, true) . '"';
+		$textcolor = colorize('', 'black');
+		$errstyle = 'style="' . colorize('', 'error') . '"';
 		$textstyle = '';
 		if ($textcolor !== '') {
 			$textstyle = ' style="' . $textcolor . '"';
@@ -120,8 +132,8 @@ class Mysql extends \mysqli
 			$doubles[] = $query['query'];
 			$sqltime += $query['time'];
 			$sqlnum++;
-			$query['time'] = colorize($query['time'], 'range:{"type": "alert", "max":0.09, "value":' . str_replace(',', '.', $query['time']) . '}', $background);
-			if (ENV_LEVEL & ENV_WEB) {
+			$query['time'] = colorize($query['time'], 'range:{"type": "alert", "max":0.09, "value":' . str_replace(',', '.', $query['time']) . '}');
+			if (ENV_MODE & ENV_WEB) {
 				$return .= '<table border="1" style="font-size: 12px; width: 100%; border-collapse: collapse;">';
 				$return .= '<tr><td colspan="12" style="font-family: monospace; font-size: 11px;' . $textcolor . '">' . $query['query'] . '</td></tr>';
 				$return .= '<tr><td colspan="12"' . $textstyle . '>Affected rows: ' . $query['rows'] . ', Query Time: ' . $query['time'] . '</td></tr><tr>';
@@ -137,14 +149,14 @@ class Mysql extends \mysqli
 				$res = parent::query('EXPLAIN ' . $query['query']);
 				$fields = $res->fetch_fields();
 				foreach ($fields as $field) {
-					if (ENV_LEVEL & ENV_WEB) {
+					if (ENV_MODE & ENV_WEB) {
 						$return .= '<th' . $textstyle . '>' . $field->name . '</th>';
 					}
 					else {
 						$fieldsarray[] = $field->name;
 					}
 				}
-				if (ENV_LEVEL & ENV_WEB) {
+				if (ENV_MODE & ENV_WEB) {
 					$return .= '</tr>';
 				}
 				$rowarray = [];
@@ -152,7 +164,7 @@ class Mysql extends \mysqli
 					$subrowarray = [];
 					$i = 0;
 					foreach ($row as $key => $value) {
-						if (ENV_LEVEL & ENV_CLI) {
+						if (ENV_MODE & ENV_CLI) {
 							$thiscount = (($value === null) ? 4 : strlen($value));
 							if (isset($charcount[$key])) {
 								$charcount[$key] = max($thiscount, $charcount[$key]);
@@ -168,11 +180,11 @@ class Mysql extends \mysqli
 						$i++;
 					}
 					$rowarray[] = $subrowarray;
-					if (ENV_LEVEL & ENV_WEB) {
+					if (ENV_MODE & ENV_WEB) {
 						$temp .= '<tr><td' . $textstyle . '>' . implode('</td><td' . $textstyle . '>', $row) . '</td></tr>';
 					}
 				}
-				if ((ENV_LEVEL & ENV_WEB) && ($temp === '')) {
+				if ((ENV_MODE & ENV_WEB) && ($temp === '')) {
 					if (preg_match('/^SELECT/i', $query['query']) > 0) {
 						$return .= '<tr><td colspan="12"' . $errstyle . '>Erronymous query.' . '</td></tr>';
 					}
@@ -180,7 +192,7 @@ class Mysql extends \mysqli
 						$return .= '<tr><td colspan="12"' . $errstyle . '>Unknown query.' . '</td></tr>';
 					}
 				}
-				elseif (ENV_LEVEL & ENV_WEB) {
+				elseif (ENV_MODE & ENV_WEB) {
 					$return .= $temp;
 				}
 				elseif (!empty($rowarray)) {
@@ -218,17 +230,17 @@ class Mysql extends \mysqli
 				}
 			}
 			elseif ($query['error'] !== false) {
-				if (ENV_LEVEL & ENV_WEB) {
+				if (ENV_MODE & ENV_WEB) {
 					$return .= '<tr><td colspan="12"' . $errstyle . '>Error (' . $query['error']['errno'] . '): ' . $query['error']['error'] . '</td></tr>';
 				}
 				else {
 					$return .= colorize('Error (' . $query['error']['errno'] . '): ' . $query['error']['error'], 'error', $background) . "\n";
 				}
 			}
-			elseif (ENV_LEVEL & ENV_WEB) {
+			elseif (ENV_MODE & ENV_WEB) {
 				$return .= $temp;
 			}
-			if (ENV_LEVEL & ENV_WEB) {
+			if (ENV_MODE & ENV_WEB) {
 				$return .= '</table><br>';
 			}
 			else {
@@ -236,12 +248,13 @@ class Mysql extends \mysqli
 			}
 		}
 		if (count(array_unique($doubles)) < count($doubles)) {
-			$return .= colorize('You have duplicate queries!', 'error', $background) . '<br>';
+			$return .= colorize('You have duplicate queries!', 'error') . '<br>';
 		}
-		$return .= colorize('Total sql time: ' . colorize($query['time'], 'range:{"type": "alert", "max":0.3, "value":' . $sqltime . '}', $background), 'black', $background) . (ENV_LEVEL & ENV_WEB ? '<br>' : "\n");
-		$return .= colorize('Total sql queries: ' . $sqlnum, 'black', $background) . (ENV_LEVEL & ENV_CLI ? "\n" : '');
+		$return .= colorize('Total sql time: ' . colorize($query['time'], 'range:{"type": "alert", "max":0.3, "value":' . $sqltime . '}'), 'black') . (ENV_MODE & ENV_WEB ? '<br>' : "\n");
+		$return .= colorize('Total sql queries: ' . $sqlnum, 'black') . (ENV_MODE & ENV_CLI ? "\n" : '');
 		return $return;
 	}
+
 	/**
 	 * Find callee.
 	 *
