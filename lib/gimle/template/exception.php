@@ -1,6 +1,6 @@
 <?php
 namespace gimle\template;
 
-class Exception extends \Exception
+class Exception extends \gimle\Exception
 {
 }

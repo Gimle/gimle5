@@ -3,6 +3,7 @@ namespace gimle\sql;
 
 use gimle\Config;
 use gimle\MainConfig;
+use const gimle\IS_SUBSITE;
 use function gimle\colorize;
 
 /**
@@ -252,6 +253,123 @@ class Mysql extends \mysqli
 		}
 		$return .= colorize('Total sql time: ' . colorize($query['time'], 'range:{"type": "alert", "max":0.3, "value":' . $sqltime . '}'), 'black') . (ENV_MODE & ENV_WEB ? '<br>' : "\n");
 		$return .= colorize('Total sql queries: ' . $sqlnum, 'black') . (ENV_MODE & ENV_CLI ? "\n" : '');
+		return $return;
+	}
+
+	public function explain_json ()
+	{
+		$return = [
+			'time' => 0,
+			'num' => 0,
+			'duplicates' => false,
+			'queries' => [],
+		];
+		$sqlnum = 0;
+		$doubles = [];
+		foreach ($this->queryCache as $query) {
+			$doubles[] = $query['query'];
+			$return['time'] += $query['time'];
+			$return['num']++;
+
+
+			// $temp = '';
+			if (($query['error'] === false) && (preg_match('/^SELECT/i', $query['query']) > 0)) {
+			// 	$charcount = [];
+				$fieldsarray = [];
+				$res = parent::query('EXPLAIN ' . $query['query']);
+				$fields = $res->fetch_fields();
+				foreach ($fields as $field) {
+			// 		if (ENV_MODE & ENV_WEB) {
+			// 			$return .= '<th' . $textstyle . '>' . $field->name . '</th>';
+			// 		}
+			// 		else {
+						$fieldsarray[] = $field->name;
+			// 		}
+				}
+			// 	if (ENV_MODE & ENV_WEB) {
+			// 		$return .= '</tr>';
+			// 	}
+			// 	$rowarray = [];
+				while ($row = $res->fetch_assoc()) {
+			// 		$subrowarray = [];
+			// 		$i = 0;
+			// 		foreach ($row as $key => $value) {
+			// 			if (ENV_MODE & ENV_CLI) {
+			// 				$thiscount = (($value === null) ? 4 : strlen($value));
+			// 				if (isset($charcount[$key])) {
+			// 					$charcount[$key] = max($thiscount, $charcount[$key]);
+			// 				}
+			// 				else {
+			// 					$charcount[$key] = max($thiscount, strlen($fieldsarray[$i]));
+			// 				}
+			// 				$subrowarray[$key] = $value;
+			// 			}
+			// 			if ($value === null) {
+			// 				$row[$key] = 'NULL';
+			// 			}
+			// 			$i++;
+			// 		}
+			// 		$rowarray[] = $subrowarray;
+			// 		if (ENV_MODE & ENV_WEB) {
+			// 			$temp .= '<tr><td' . $textstyle . '>' . implode('</td><td' . $textstyle . '>', $row) . '</td></tr>';
+			// 		}
+				}
+			// 	if ((ENV_MODE & ENV_WEB) && ($temp === '')) {
+			// 		if (preg_match('/^SELECT/i', $query['query']) > 0) {
+			// 			$return .= '<tr><td colspan="12"' . $errstyle . '>Erronymous query.' . '</td></tr>';
+			// 		}
+			// 		else {
+			// 			$return .= '<tr><td colspan="12"' . $errstyle . '>Unknown query.' . '</td></tr>';
+			// 		}
+			// 	}
+			// 	elseif (ENV_MODE & ENV_WEB) {
+			// 		$return .= $temp;
+			// 	}
+			// 	elseif (!empty($rowarray)) {
+			// 		$return .= '+';
+			// 		foreach ($charcount as $value) {
+			// 			$return .= str_repeat('-', $value + 2) . '+';
+			// 		}
+			// 		$return .= "\n|";
+			// 		foreach ($fieldsarray as $value) {
+			// 			$return .= ' ' . str_pad($value, $charcount[$value], ' ', STR_PAD_BOTH) . ' |';
+			// 		}
+			// 		foreach ($rowarray as $row) {
+			// 			$return .= "\n+";
+			// 			foreach ($charcount as $value) {
+			// 				$return .= str_repeat('-', $value + 2) . '+';
+			// 			}
+			// 			$return .= "\n|";
+			// 			foreach ($row as $key => $value) {
+			// 				$return .= ' ' . str_pad($value, $charcount[$key], ' ', STR_PAD_RIGHT) . ' |';
+			// 			}
+			// 		}
+			// 		$return .= "\n+";
+			// 		foreach ($charcount as $value) {
+			// 			$return .= str_repeat('-', $value + 2) . '+';
+			// 		}
+			// 		$return .= "\n";
+			// 	}
+			// 	else {
+			// 		if (preg_match('/^SELECT/i', $query['query']) > 0) {
+			// 			$return .= colorize('Erronymous query.', 'error', $background) . "\n";
+			// 		}
+			// 		else {
+			// 			$return .= colorize('Unknown query.', 'error', $background) . "\n";
+			// 		}
+			// 	}
+			}
+
+
+
+
+			//  $query['error']['errno']  $query['error']['error']
+			$return['queries'][] = $query;
+		}
+		if (count(array_unique($doubles)) < count($doubles)) {
+			$return['duplicates'] = true;
+		}
+
 		return $return;
 	}
 
