@@ -40,32 +40,55 @@ class Spectacle
 		register_shutdown_function([$this, 'shutdown']);
 	}
 
-	public function push ($tab, $name, $data)
+	public function push ($tab, ...$data)
 	{
-		$tab = mb_strtolower($tab);
+		$name = $tab;
+		$tab = preg_replace('/[^a-zA-Z1-9]/', '_', mb_strtolower($tab));
 		if ($tab === 'info') {
 			return false;
 		}
 		if (isset($this->data['tabs'][$tab])) {
-			$this->data['tabs'][$tab]['content'] .= $data;
+			$this->data['tabs'][$tab]['content'] .= $this->datafy($data);
 		}
 		else {
-			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $data];
+			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $this->datafy($data)];
 		}
+		return $this;
 	}
 
-	public function unshift ($tab, $data)
+	public function unshift ($tab, ...$data)
 	{
-		$tab = mb_strtolower($tab);
+		$name = $tab;
+		$tab = preg_replace('/[^a-zA-Z1-9]/', '_', mb_strtolower($tab));
 		if ($tab === 'info') {
 			return false;
 		}
 		if (isset($this->data['tabs'][$tab])) {
-			$this->data['tabs'][$tab]['content'] = $data . $this->data['tabs'][$tab]['content'];
+			$this->data['tabs'][$tab]['content'] = $this->datafy($data) . $this->data['tabs'][$tab]['content'];
 		}
 		else {
-			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $data];
+			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $this->datafy($data)];
 		}
+		return $this;
+	}
+
+	private function datafy ($data)
+	{
+		$return = [];
+		$backtrace = debug_backtrace();
+		$file = $backtrace[1]['file'];
+		$line = $backtrace[1]['line'];
+		$return[] = '<p>Spectacle: <b style="color: DarkBlue;">' . $file . '</b> on line <b style="color: DarkBlue;">' . $line . '</b></p>';
+
+		foreach ($data as $item) {
+			if (!is_string($item)) {
+				$return[] = d($item, true, 'item');
+			}
+			else {
+				$return[] = d($item, true, 'item');
+			}
+		}
+		return implode('', $return);
 	}
 
 	public function shutdown ()
