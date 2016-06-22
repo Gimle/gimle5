@@ -228,6 +228,7 @@ function var_dump ($var, $return = false, $title = false, $background = false, $
 			}
 			unset($interfaces);
 
+
 			if ($var instanceof Iterator) {
 				echo ' ' . colorize('=>', 'black', $background, $mode) . ' ' . colorize($class->getName() . ' Object (Iterator)' . $parents, 'gray', $background, $mode) . "\n" . str_repeat($doDump_indent, $indent) . colorize('(', 'lightgray', $background, $mode) . "\n";
 				var_dump($var);
@@ -315,12 +316,86 @@ function var_dump ($var, $return = false, $title = false, $background = false, $
 						}
 					}
 				}
-				unset($props, $reflect);
+
 				if (!empty($dblcheck)) {
 					foreach ($dblcheck as $key => $value) {
 						$dodump($value, '[\'' . $key . '\' magic]', $indent + 1);
 					}
 				}
+
+				$methods = $reflect->getMethods();
+				if (!empty($methods)) {
+					foreach ($methods as $method) {
+
+						$doDump_indent = colorize('|', 'lightgray', $background, $mode) . '   ';
+						echo str_repeat($doDump_indent, $indent + 1);
+
+						if ($method->getModifiers() & \ReflectionMethod::IS_ABSTRACT) {
+							echo colorize('abstract ', 'gray', $background, $mode);
+						}
+						elseif ($method->getModifiers() & \ReflectionMethod::IS_FINAL) {
+							echo colorize('final ', 'gray', $background, $mode);
+						}
+
+						if ($method->getModifiers() & \ReflectionMethod::IS_PUBLIC) {
+							echo colorize('public ', 'gray', $background, $mode);
+						}
+						elseif ($method->getModifiers() & \ReflectionMethod::IS_PROTECTED) {
+							echo colorize('protected ', 'gray', $background, $mode);
+						}
+						elseif ($method->getModifiers() & \ReflectionMethod::IS_PRIVATE) {
+							echo colorize('private ', 'gray', $background, $mode);
+						}
+
+						echo colorize($method->class, 'gray', $background, $mode);
+
+						$type = '->';
+						if ($method->getModifiers() & \ReflectionMethod::IS_STATIC) {
+							$type = '::';
+						}
+
+						echo colorize($type . $method->name . '(', 'recursion', $background, $mode);
+
+						$reflectMethod = new \ReflectionMethod($method->class, $method->name);
+						$methodParams = $reflectMethod->getParameters();
+						if (!empty($methodParams)) {
+							$mParams = [];
+							foreach ($methodParams as $mParam) {
+								if ($mParam->isOptional()) {
+									try {
+										$default = $mParam->getDefaultValue();
+										if (is_string($default)) {
+											$default = "'" . $default . "'";
+										}
+										elseif ($default === true) {
+											$default = 'true';
+										}
+										elseif ($default === false) {
+											$default = 'false';
+										}
+										elseif ($default === null) {
+											$default = 'null';
+										}
+									}
+									catch (\Exception $e) {
+										$default = 'Unknown';
+									}
+									$mParams[] = colorize(($mParam->isPassedByReference() ? '&amp;' : '') . '$' . $mParam->name . ' = ' . $default, 'gray', $background, $mode);
+								}
+								else {
+									$mParams[] = colorize(($mParam->isPassedByReference() ? '&amp;' : '') . '$' . $mParam->name, 'black', $background, $mode);
+								}
+							}
+							echo implode(', ', $mParams);
+						}
+
+						echo colorize(')', 'recursion', $background, $mode);
+						echo "\n";
+
+
+					}
+				}
+				unset($props, $reflect);
 			}
 			unset($class);
 			echo str_repeat($doDump_indent, $indent) . colorize(')', 'lightgray', $background, $mode);
