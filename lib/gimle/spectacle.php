@@ -7,6 +7,9 @@ class Spectacle
 
 	private $id;
 	private $data = [];
+	private $match = [];
+	private $tab = 'Spectacle';
+
 	private static $dir = TEMP_DIR . 'gimle/chrome/';
 	private static $lifeTime = 3600;
 
@@ -40,8 +43,10 @@ class Spectacle
 		register_shutdown_function([$this, 'shutdown']);
 	}
 
-	public function push ($tab, ...$data)
+	public function push (...$data)
 	{
+		$tab = $this->tab;
+		$this->tab = 'Spectacle';
 		$name = $tab;
 		$tab = preg_replace('/[^a-zA-Z1-9]/', '_', mb_strtolower($tab));
 		if ($tab === 'info') {
@@ -53,11 +58,12 @@ class Spectacle
 		else {
 			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $this->datafy($data)];
 		}
-		return $this;
 	}
 
-	public function unshift ($tab, ...$data)
+	public function unshift (...$data)
 	{
+		$tab = $this->tab;
+		$this->tab = 'Spectacle';
 		$name = $tab;
 		$tab = preg_replace('/[^a-zA-Z1-9]/', '_', mb_strtolower($tab));
 		if ($tab === 'info') {
@@ -69,24 +75,83 @@ class Spectacle
 		else {
 			$this->data['tabs'][$tab] = ['title' => $name, 'content' => $this->datafy($data)];
 		}
+	}
+
+	public function match ($match = [])
+	{
+		$this->match = $match;
+		return $this;
+	}
+
+	public function tab ($name)
+	{
+		$this->tab = $name;
 		return $this;
 	}
 
 	private function datafy ($data)
 	{
+		$match = $this->match;
+
+		if (!isset($match['match'])) {
+			$match['match'] = '/([a-zA-Z\\\\]+|)(Spectacle::getInstance\(\)(.*?)(->(push|unshift)\((.*)))/';
+		}
+		if (!isset($match['steps'])) {
+			$match['steps'] = 1;
+		}
+		if (!isset($match['index'])) {
+			$match['index'] = 4;
+		}
+		if (!isset($match['fallback'])) {
+			$match['fallback'] = false;
+		}
+
 		$return = [];
 		$backtrace = debug_backtrace();
-		$file = $backtrace[1]['file'];
-		$line = $backtrace[1]['line'];
-		$return[] = '<p>Spectacle: <b style="color: DarkBlue;">' . $file . '</b> on line <b style="color: DarkBlue;">' . $line . '</b></p>';
+		$backtrace = $backtrace[$match['steps']];
+		$file = $backtrace['file'];
+		$line = $backtrace['line'];
 
-		foreach ($data as $item) {
-			if (!is_string($item)) {
-				$return[] = d($item, true, 'item');
+		if (substr($backtrace['file'], -13) == 'eval()\'d code') {
+			$title = 'eval()';
+		}
+		else {
+			$con = explode("\n", file_get_contents($backtrace['file']));
+			$callee = $con[$backtrace['line'] - 1];
+			preg_match_all($match['match'], $callee, $matches);
+			if (!empty($matches)) {
+				$i = 0;
+				$title = '';
+				foreach (str_split($matches[$match['index']][0], 1) as $value) {
+					if ($value === '(') {
+						$i++;
+					}
+					if (($i === 0) && ($value === ',')) {
+						break;
+					}
+					if ($value === ')') {
+						$i--;
+					}
+					if (($i === 0) && ($value === ')')) {
+						$title .= $value;
+						break;
+					}
+					$title .= $value;
+				}
+			}
+			elseif ($match['fallback'] === false) {
+				$title = trim($con[$backtrace['line'] - 1]);
 			}
 			else {
-				$return[] = d($item, true, 'item');
+				$title = $match['fallback'];
 			}
+		}
+		$this->match = [];
+
+		$return[] = '<p><span style="font-family: monospace; color: DarkBlue;">' . $title . '</span> in <span style="color: DarkBlue;">' . $file . '</span> on line <span style="color: DarkBlue;">' . $line . '</span></p>';
+
+		foreach ($data as $index => $item) {
+			$return[] = d($item, true, 'param' . ($index + 1));
 		}
 		return implode('', $return);
 	}
