@@ -119,7 +119,7 @@ class Spectacle
 			$con = explode("\n", file_get_contents($backtrace['file']));
 			$callee = $con[$backtrace['line'] - 1];
 			preg_match_all($match['match'], $callee, $matches);
-			if (!empty($matches)) {
+			if ((!empty($matches)) && (!empty($matches[$match['index']]))) {
 				$i = 0;
 				$title = '';
 				foreach (str_split($matches[$match['index']][0], 1) as $value) {
