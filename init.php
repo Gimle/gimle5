@@ -67,6 +67,9 @@ if ((isset($config['path_info_override'])) && ($config['path_info_override'] !==
 	}
 	$_SERVER['PATH_INFO'] = $_SERVER['PATH_INFO'][0];
 	unset($config['path_info_override']);
+	if (isset($_SERVER['MATCH_SITENAME'])) {
+		unset($_SERVER['MATCH_SITENAME']);
+	}
 }
 
 if (isset($config['umask'])) {
@@ -116,6 +119,13 @@ $getBase = function () {
 	$base .= $host[0] . $port . '/';
 	unset($host, $port);
 
+
+	if (isset($_SERVER['MATCH_SITENAME'])) {
+		$_SERVER['PATH_INFO'] = substr(ltrim($_SERVER['REQUEST_URI'], '/'), strlen($_SERVER['MATCH_SITENAME']));
+		if ($_SERVER['QUERY_STRING'] !== '') {
+			$_SERVER['PATH_INFO'] = substr($_SERVER['PATH_INFO'], 0, -strlen('?' . $_SERVER['QUERY_STRING']));
+		}
+	}
 	if (isset($_SERVER['PATH_INFO'])) {
 		$base .= ltrim(substr($_SERVER['REQUEST_URI'], 0, -strlen($_SERVER['PATH_INFO'])), '/');
 	}
@@ -335,16 +345,16 @@ if (ENV_MODE & ENV_WEB) {
 			}
 		}
 
+		if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
+			throw new \Exception('No matching basepath configuration.');
+		}
+
 		define(__NAMESPACE__ . '\\MAIN_SITE_ID', SITE_ID);
 		define(__NAMESPACE__ . '\\MAIN_SITE_DIR', SITE_DIR);
 		define(__NAMESPACE__ . '\\MAIN_BASE_PATH', BASE_PATH);
 		define(__NAMESPACE__ . '\\MAIN_TEMP_DIR', TEMP_DIR);
 		define(__NAMESPACE__ . '\\MAIN_CACHE_DIR', CACHE_DIR);
 		define(__NAMESPACE__ . '\\MAIN_STORAGE_DIR', STORAGE_DIR);
-
-		if (!defined(__NAMESPACE__ . '\\BASE_PATH')) {
-			throw new \Exception('No matching basepath configuration.');
-		}
 	}
 	unset($config['base']);
 
