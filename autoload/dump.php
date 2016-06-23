@@ -376,6 +376,9 @@ function var_dump ($var, $return = false, $title = false, $background = false, $
 										elseif ($default === null) {
 											$default = 'null';
 										}
+										elseif (is_array($default)) {
+											$default = 'Array';
+										}
 									}
 									catch (\Exception $e) {
 										$default = 'Unknown';
