@@ -258,8 +258,7 @@ if (ENV_MODE & ENV_WEB) {
 		throw new \Exception('No basepath set.');
 	}
 	elseif (!is_array($config['base'])) {
-		define('BASE_PATH', $config['base']);
-		define(__NAMESPACE__ . '\\IS_SUBSITE', false);
+		throw new \Exception('Invalid basepath set.');
 	}
 	elseif (is_array($config['base'])) {
 		define(__NAMESPACE__ . '\\IS_SUBSITE', false);
