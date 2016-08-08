@@ -4,6 +4,9 @@ namespace gimle\sql;
 use gimle\Config;
 use gimle\MainConfig;
 use const gimle\IS_SUBSITE;
+use const gimle\ENV_MODE;
+use const gimle\ENV_WEB;
+use const gimle\ENV_CLI;
 use function gimle\colorize;
 
 /**
