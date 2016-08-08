@@ -367,6 +367,8 @@ if (ENV_MODE & ENV_WEB) {
 	define(__NAMESPACE__ . '\\THIS_PATH', $thisPath);
 	unset($thisPath);
 }
+
+define(__NAMESPACE__ . '\\PAGE_PATH', (string) substr(THIS_PATH, strlen(BASE_PATH)));
 if (isset($config['base'])) {
 	unset($config['base']);
 }
