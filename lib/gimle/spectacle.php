@@ -15,6 +15,9 @@ class Spectacle
 
 	public function __construct ()
 	{
+		if (ENV_MODE & ENV_LIVE) {
+			return;
+		}
 		if (!file_exists(self::$dir)) {
 			mkdir(self::$dir, 0777, true);
 		}
@@ -183,6 +186,9 @@ class Spectacle
 
 	public static function read ($id)
 	{
+		if (ENV_MODE & ENV_LIVE) {
+			return;
+		}
 		if (file_exists(self::$dir . $id)) {
 			return file_get_contents(self::$dir . $id);
 		}
@@ -191,6 +197,9 @@ class Spectacle
 
 	public function __destruct ()
 	{
+		if (ENV_MODE & ENV_LIVE) {
+			return;
+		}
 		file_put_contents(self::$dir . $this->id, json_encode($this->data) . "\n");
 		chmod(self::$dir . $this->id, 0664);
 	}
