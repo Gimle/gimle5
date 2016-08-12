@@ -124,6 +124,9 @@ $getBase = function () {
 		if ($_SERVER['QUERY_STRING'] !== '') {
 			$_SERVER['PATH_INFO'] = substr($_SERVER['PATH_INFO'], 0, -strlen('?' . $_SERVER['QUERY_STRING']));
 		}
+		elseif (substr($_SERVER['PATH_INFO'], -1, 1) === '?') {
+			$_SERVER['PATH_INFO'] = substr($_SERVER['PATH_INFO'], 0, -1);
+		}
 	}
 	if (isset($_SERVER['PATH_INFO'])) {
 		$base .= ltrim(mb_substr(urldecode($_SERVER['REQUEST_URI']), 0, -mb_strlen($_SERVER['PATH_INFO'])), '/');
