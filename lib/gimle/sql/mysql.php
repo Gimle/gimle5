@@ -88,13 +88,19 @@ class Mysql extends \mysqli
 		$t = microtime(true);
 		$error = false;
 		if (!$result = parent::query($query, $resultmode)) {
-			$append = self::debug_backtrace('query');
-			trigger_error('MySQL query error: (' . $this->errno . ') ' . $this->error . ' in "' . $query . '".' . $append);
 			$error = ['errno' => $this->errno, 'error' => $this->error];
 		}
-		$mysqliresult = (is_bool($result) ? $result : new Mysqliresult($result));
 		$t = microtime(true) - $t;
 		$this->queryCache[] = ['query' => $query, 'time' => $t, 'rows' => $this->affected_rows, 'error' => $error];
+		if (!$result) {
+			$e = new Exception('MySQL query error: (' . $this->errno . ') ' . $this->error, $this->errno);
+			$e->set('error', $this->error);
+			$e->set('query', $query);
+			$e->set('time', $t);
+			$e->set('rows', $this->affected_rows);
+			throw $e;
+		}
+		$mysqliresult = (is_bool($result) ? $result : new Mysqliresult($result));
 		return $mysqliresult;
 	}
 
@@ -123,6 +129,7 @@ class Mysql extends \mysqli
 	{
 		$textcolor = colorize('', 'black');
 		$errstyle = 'style="' . colorize('', 'error') . '"';
+		$errstyle = 'style="color: #c00;"';
 		$textstyle = '';
 		if ($textcolor !== '') {
 			$textstyle = ' style="' . $textcolor . '"';
