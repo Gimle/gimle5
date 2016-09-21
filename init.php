@@ -122,7 +122,7 @@ $getBase = function () {
 	if (isset($_SERVER['MATCH_SITENAME'])) {
 		$_SERVER['PATH_INFO'] = substr(ltrim(urldecode($_SERVER['REQUEST_URI']), '/'), strlen($_SERVER['MATCH_SITENAME']));
 		if ($_SERVER['QUERY_STRING'] !== '') {
-			$_SERVER['PATH_INFO'] = substr($_SERVER['PATH_INFO'], 0, -strlen('?' . $_SERVER['QUERY_STRING']));
+			$_SERVER['PATH_INFO'] = explode('?', $_SERVER['PATH_INFO'])[0];
 		}
 		elseif (substr($_SERVER['PATH_INFO'], -1, 1) === '?') {
 			$_SERVER['PATH_INFO'] = substr($_SERVER['PATH_INFO'], 0, -1);
