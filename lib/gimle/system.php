@@ -3,13 +3,13 @@ namespace gimle;
 
 class System
 {
-	private static $autoload = array(array('path' => SITE_DIR . 'module/gimle5/lib/', 'toLowercase' => true, 'init' => false));
+	private static $autoload = [['path' => SITE_DIR . 'module/' . GIMLE5 . '/lib/', 'toLowercase' => true, 'init' => false]];
 
 	private static $modules = null;
 
 	public static function autoloadRegister ($path, $toLowercase = true, $initFunction = false)
 	{
-		self::$autoload[] = array('path' => $path, 'toLowercase' => $toLowercase, 'init' => $initFunction);
+		self::$autoload[] = ['path' => $path, 'toLowercase' => $toLowercase, 'init' => $initFunction];
 	}
 
 	/**
@@ -54,7 +54,7 @@ class System
 			if (is_readable($file)) {
 				include $file;
 				if (($autoload['init'] !== false) && (method_exists($name, $autoload['init']))) {
-					call_user_func(array($name, $autoload['init']));
+					call_user_func([$name, $autoload['init']]);
 				}
 				break;
 			}
@@ -93,7 +93,7 @@ class System
 						unset($value);
 					}
 					if ((substr($line[1], 0, 1) === '"') && (substr($line[1], -1, 1) === '"')) {
-						$value = str_replace(array('\\"', '\\\\'), array('"', '\\'), substr($line[1], 1, -1));
+						$value = str_replace(['\\"', '\\\\'], ['"', '\\'], substr($line[1], 1, -1));
 					}
 					elseif ((ctype_digit($line[1])) || ((substr($line[1], 0, 1) === '-') && (ctype_digit(substr($line[1], 1))))) {
 						$num = $line[1];

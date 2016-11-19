@@ -3,6 +3,7 @@ namespace gimle\router;
 
 use const gimle\SITE_DIR;
 use const gimle\BASE_PATH_KEY;
+use const gimle\GIMLE5;
 
 use gimle\canvas\Canvas;
 use gimle\System;
@@ -31,6 +32,7 @@ class Router
 	const E_TEMPLATE_NOT_FOUND = 4;
 	const E_CANVAS_RETURN = 5;
 	const E_TEMPLATE_RETURN = 6;
+	const E_ROUTES_EXHAUSTED = 7;
 
 	private $requestMethod;
 
@@ -43,6 +45,8 @@ class Router
 
 	private $url = [];
 	private $urlString = '';
+
+	private $recuriveCanvasHolder = false;
 
 	public function __construct ()
 	{
@@ -108,13 +112,12 @@ class Router
 	{
 		if (($basePathKey === '*') || ($basePathKey === BASE_PATH_KEY)) {
 
-			$this->routes[$path] = [
+			$this->routes[$path][] = [
 				'callback' => $callback,
 				'requestMethod' => $requestMethod,
 			];
 		}
 	}
-
 
 	public function bind ($basePathKey, $path, $callback = false, $conditions = [], $requestMethod = self::R_GET | self::R_HEAD)
 	{
@@ -126,7 +129,7 @@ class Router
 
 		if (($basePathKey === '*') || ($basePathKey === BASE_PATH_KEY)) {
 
-			$this->routes[$path] = [
+			$this->routes[$path][] = [
 				'callback' => $callback,
 				'requestMethod' => $requestMethod,
 			];
@@ -146,6 +149,10 @@ class Router
 		}, str_replace(')', ')?', (string) $path)) . '$#u';
 	}
 
+	public function getCanvas () {
+		return $this->canvas;
+	}
+
 	function page ($part = false) {
 		if ($part !== false) {
 			if (isset($this->url[$part])) {
@@ -161,7 +168,10 @@ class Router
 		$routeFound = false;
 		$methodMatch = false;
 
-		foreach ($this->routes as $path => $route) {
+		$recuriveCanvasHolder = $this->canvas;
+
+		foreach ($this->routes as $path => $index) {
+			$route = end($index);
 
 			// Check if the current page matches the route.
 			if (preg_match($path, $this->urlString, $matches)) {
@@ -177,6 +187,11 @@ class Router
 					$route['callback']();
 					$methodMatch = true;
 					break;
+				}
+				elseif (count($this->routes[$path]) > 1) {
+					array_pop($this->routes[$path]);
+					$this->dispatch();
+					return;
 				}
 			}
 		}
@@ -195,15 +210,15 @@ class Router
 				$found = true;
 			}
 			else {
-				foreach (System::getModules('gimle5') as $module) {
+				foreach (System::getModules(GIMLE5) as $module) {
 					if (is_readable(SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php')) {
 						$this->canvas = SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php';
 						$found = true;
 					}
 				}
 				if ($found === false) {
-					if (is_readable(SITE_DIR . 'module/gimle5/canvas/' . $this->canvas . '.php')) {
-						$this->canvas = SITE_DIR . 'module/gimle5/canvas/' . $this->canvas . '.php';
+					if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $this->canvas . '.php')) {
+						$this->canvas = SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $this->canvas . '.php';
 						$found = true;
 					}
 				}
@@ -228,7 +243,7 @@ class Router
 							$found = true;
 						}
 						else {
-							foreach (System::getModules('gimle5') as $module) {
+							foreach (System::getModules(GIMLE5) as $module) {
 								if (is_readable(SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php')) {
 									$this->template = SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php';
 									$found = true;
@@ -246,6 +261,17 @@ class Router
 
 						if ((is_array($templateResult)) && (count($templateResult) === 2) && (is_string($templateResult[0])) && (is_int($templateResult[1]))) {
 							throw new TemplateException(...$templateResult);
+						}
+						if ($templateResult === false) {
+							if (count($this->routes[$path]) > 1) {
+								$this->canvas = $recuriveCanvasHolder;
+								array_pop($this->routes[$path]);
+								$this->dispatch();
+								return;
+							}
+							else {
+								throw new Exception('Routes exhausted.', self::E_ROUTES_EXHAUSTED);
+							}
 						}
 						if ($templateResult !== true) {
 							throw new Exception('Invalid template return value.', self::E_TEMPLATE_RETURN);

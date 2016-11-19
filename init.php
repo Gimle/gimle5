@@ -11,6 +11,10 @@ require __DIR__ . '/lib/' . str_replace('\\', '/', __NAMESPACE__) . '/system.php
 
 spl_autoload_register(__NAMESPACE__ . '\\System::autoload');
 
+set_error_handler(function ($errno, $message, $file, $line) {
+	throw new ErrorException($message, 0, $errno, $file, $line);
+});
+
 $config = System::parseConfigFile(SITE_DIR . 'config.ini');
 
 $env_add = ((PHP_SAPI === 'cli') ? ENV_CLI : ENV_WEB);
@@ -426,7 +430,7 @@ Config::setAll($config);
 
 unset($config);
 
-foreach (System::getModules('gimle5') as $name) {
+foreach (System::getModules(GIMLE5) as $name) {
 	if (is_executable(SITE_DIR . 'module/' . $name . '/autoload/')) {
 		foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
 			include SITE_DIR . 'module/' . $name . '/autoload/' . $fileInfo->getFilename();
@@ -440,6 +444,72 @@ foreach (System::getModules('gimle5') as $name) {
 if (is_executable(SITE_DIR . 'lib/')) {
 	System::autoloadRegister(SITE_DIR . 'lib/');
 }
+
+set_exception_handler(function ($e) {
+	ob_clean();
+	$getCanvas = function ($canvas) {
+		if ((substr($canvas, 0, strlen(SITE_DIR)) === SITE_DIR) && (is_readable($canvas))) {
+			return $canvas;
+		}
+		if (is_readable(SITE_DIR . 'canvas/' . $canvas . '.php')) {
+			return SITE_DIR . 'canvas/' . $canvas . '.php';
+		}
+		if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php')) {
+			return SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php';
+		}
+		return false;
+	};
+
+	$canvas = router\Router::getInstance()->getCanvas();
+
+	if ($canvas !== false) {
+		$canvas = $getCanvas($canvas);
+	}
+	if ($canvas === false) {
+		$headers = headers_list();
+		foreach ($headers as $header) {
+			$check = 'Content-type: application/json;';
+			if (substr($header, 0, strlen($check)) === $check) {
+				$canvas = $getCanvas('json');
+			}
+		}
+	}
+	if ($canvas === false) {
+		$canvas = $getCanvas('pc');
+	}
+	canvas\Canvas::_override($canvas);
+	$template = 500;
+	if (($e instanceof \gimle\router\Exception) && ($e->getCode() === router\Router::E_ROUTE_NOT_FOUND)) {
+		$template = 404;
+	}
+	if ($e instanceof \gimle\template\Exception) {
+		$template = $e->getCode();
+	}
+
+	$findTemplate = function ($name) {
+		if (is_readable(SITE_DIR . 'template/error/' . $name . '.php')) {
+			return SITE_DIR . 'template/error/' . $name . '.php';
+		}
+		foreach (System::getModules(GIMLE5) as $module) {
+			if (is_readable(SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php')) {
+				return SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php';
+			}
+		}
+		if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/template/error/' . $name . '.php')) {
+			return SITE_DIR . 'module/' . GIMLE5 . '/template/error/' . $name . '.php';
+		}
+		return false;
+	};
+
+	$template = $findTemplate($template);
+	if ($template === false) {
+		$template = $findTemplate(500);
+	}
+	inc($template, $e);
+
+	Spectacle::getInstance()->tab('Spectacle')->push($e);
+	canvas\Canvas::_create();
+});
 
 if (is_executable(SITE_DIR . 'autoload/')) {
 	foreach (new \RecursiveDirectoryIterator(SITE_DIR . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {

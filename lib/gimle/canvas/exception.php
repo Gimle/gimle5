@@ -1,6 +1,6 @@
 <?php
 namespace gimle\canvas;
 
-class Exception extends \Exception
+class Exception extends \gimle\Exception
 {
 }
