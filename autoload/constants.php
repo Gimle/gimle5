@@ -91,3 +91,4 @@ const ENV_LIVE = 2048;
  * @var string
  */
 define(__NAMESPACE__ . '\\SITE_ID', substr(trim(SITE_DIR, DIRECTORY_SEPARATOR), strrpos(trim(SITE_DIR, DIRECTORY_SEPARATOR), DIRECTORY_SEPARATOR) + 1));
+define(__NAMESPACE__ . '\\GIMLE5', substr(__DIR__, strrpos(__DIR__, '/', -10) + 1, -9));
