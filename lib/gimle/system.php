@@ -6,6 +6,7 @@ class System
 	private static $autoload = [['path' => SITE_DIR . 'module/' . GIMLE5 . '/lib/', 'toLowercase' => true, 'init' => false]];
 
 	private static $modules = null;
+	private static $logname = false;
 
 	public static function autoloadRegister ($path, $toLowercase = true, $initFunction = false)
 	{
@@ -182,4 +183,20 @@ class System
 		unlink($filename);
 		return array('stout' => $stout, 'sterr' => $sterr, 'return' => $return);
 	}
+
+	public static function getLogName ()
+	{
+		if (self::$logname === false) {
+			$exec = 'logname';
+			$result = System::exec($exec);
+
+			self::$logname = '';
+			if (isset($result['stout'][0])) {
+				self::$logname = $result['stout'][0];
+			}
+		}
+
+		return self::$logname;
+	}
+
 }
