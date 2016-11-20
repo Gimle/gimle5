@@ -4,6 +4,8 @@ namespace gimle\router;
 use const gimle\SITE_DIR;
 use const gimle\BASE_PATH_KEY;
 use const gimle\GIMLE5;
+use const gimle\ENV_MODE;
+use const gimle\ENV_LIVE;
 
 use gimle\canvas\Canvas;
 use gimle\System;
@@ -95,10 +97,12 @@ class Router
 			}
 		}
 
-		$this->bind('*', '__gimle/:id', function () {
-			$this->setCanvas('js');
-			$this->setTemplate('spectacle');
-		});
+		if ((ENV_MODE | ENV_LIVE) !== ENV_LIVE) {
+			$this->bind('*', '__gimle/:id', function () {
+				$this->setCanvas('js');
+				$this->setTemplate('spectacle');
+			});
+		}
 	}
 
 	public function setCanvas ($name, $parse = true)
