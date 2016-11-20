@@ -446,66 +446,75 @@ if (is_executable(SITE_DIR . 'lib/')) {
 }
 
 set_exception_handler(function ($e) {
-	ob_clean();
-	$getCanvas = function ($canvas) {
-		if ((substr($canvas, 0, strlen(SITE_DIR)) === SITE_DIR) && (is_readable($canvas))) {
-			return $canvas;
-		}
-		if (is_readable(SITE_DIR . 'canvas/' . $canvas . '.php')) {
-			return SITE_DIR . 'canvas/' . $canvas . '.php';
-		}
-		if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php')) {
-			return SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php';
-		}
-		return false;
-	};
+	if (ENV_MODE & ENV_WEB) {
+		ob_clean();
+		$getCanvas = function ($canvas) {
+			if ((substr($canvas, 0, strlen(SITE_DIR)) === SITE_DIR) && (is_readable($canvas))) {
+				return $canvas;
+			}
+			if (is_readable(SITE_DIR . 'canvas/' . $canvas . '.php')) {
+				return SITE_DIR . 'canvas/' . $canvas . '.php';
+			}
+			if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php')) {
+				return SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $canvas . '.php';
+			}
+			return false;
+		};
 
-	$canvas = router\Router::getInstance()->getCanvas();
+		$canvas = router\Router::getInstance()->getCanvas();
 
-	if ($canvas !== false) {
-		$canvas = $getCanvas($canvas);
-	}
-	if ($canvas === false) {
-		$headers = headers_list();
-		foreach ($headers as $header) {
-			$check = 'Content-type: application/json;';
-			if (substr($header, 0, strlen($check)) === $check) {
-				$canvas = $getCanvas('json');
+		if ($canvas !== false) {
+			$canvas = $getCanvas($canvas);
+		}
+		if ($canvas === false) {
+			$headers = headers_list();
+			foreach ($headers as $header) {
+				$check = 'Content-type: application/json;';
+				if (substr($header, 0, strlen($check)) === $check) {
+					$canvas = $getCanvas('json');
+				}
 			}
 		}
-	}
-	if ($canvas === false) {
-		$canvas = $getCanvas('pc');
-	}
-	canvas\Canvas::_override($canvas);
-	$template = 500;
-	if (($e instanceof \gimle\router\Exception) && ($e->getCode() === router\Router::E_ROUTE_NOT_FOUND)) {
-		$template = 404;
-	}
-	if ($e instanceof \gimle\template\Exception) {
-		$template = $e->getCode();
-	}
-
-	$findTemplate = function ($name) {
-		if (is_readable(SITE_DIR . 'template/error/' . $name . '.php')) {
-			return SITE_DIR . 'template/error/' . $name . '.php';
+		if ($canvas === false) {
+			$canvas = $getCanvas('pc');
 		}
-		foreach (System::getModules() as $module) {
-			if (is_readable(SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php')) {
-				return SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php';
+		canvas\Canvas::_override($canvas);
+		$template = 500;
+		if (($e instanceof \gimle\router\Exception) && ($e->getCode() === router\Router::E_ROUTE_NOT_FOUND)) {
+			$template = 404;
+		}
+		if ($e instanceof \gimle\template\Exception) {
+			$template = $e->getCode();
+		}
+
+		$findTemplate = function ($name) {
+			if (is_readable(SITE_DIR . 'template/error/' . $name . '.php')) {
+				return SITE_DIR . 'template/error/' . $name . '.php';
 			}
+			foreach (System::getModules() as $module) {
+				if (is_readable(SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php')) {
+					return SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php';
+				}
+			}
+			return false;
+		};
+
+		$template = $findTemplate($template);
+		if ($template === false) {
+			$template = $findTemplate(500);
 		}
-		return false;
-	};
+		inc($template, $e);
 
-	$template = $findTemplate($template);
-	if ($template === false) {
-		$template = $findTemplate(500);
+		Spectacle::getInstance()->tab('Spectacle')->push($e);
+		canvas\Canvas::_create();
+		return;
 	}
-	inc($template, $e);
-
-	Spectacle::getInstance()->tab('Spectacle')->push($e);
-	canvas\Canvas::_create();
+	d($e);
+	echo "\n";
+	echo $e->getMessage() . ' in ';
+	echo $e->getFile() . ' on line ';
+	echo $e->getLine() . "\n";
+	echo "\n";
 });
 
 if (is_executable(SITE_DIR . 'autoload/')) {
