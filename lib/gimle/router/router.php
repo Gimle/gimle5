@@ -95,6 +95,10 @@ class Router
 			}
 		}
 
+		$this->bind('*', '__gimle/:id', function () {
+			$this->setCanvas('js');
+			$this->setTemplate('spectacle');
+		});
 	}
 
 	public function setCanvas ($name, $parse = true)
@@ -210,15 +214,9 @@ class Router
 				$found = true;
 			}
 			else {
-				foreach (System::getModules(GIMLE5) as $module) {
+				foreach (System::getModules() as $module) {
 					if (is_readable(SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php')) {
 						$this->canvas = SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php';
-						$found = true;
-					}
-				}
-				if ($found === false) {
-					if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $this->canvas . '.php')) {
-						$this->canvas = SITE_DIR . 'module/' . GIMLE5 . '/canvas/' . $this->canvas . '.php';
 						$found = true;
 					}
 				}
@@ -243,7 +241,7 @@ class Router
 							$found = true;
 						}
 						else {
-							foreach (System::getModules(GIMLE5) as $module) {
+							foreach (System::getModules() as $module) {
 								if (is_readable(SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php')) {
 									$this->template = SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php';
 									$found = true;

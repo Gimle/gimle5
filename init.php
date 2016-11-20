@@ -490,13 +490,10 @@ set_exception_handler(function ($e) {
 		if (is_readable(SITE_DIR . 'template/error/' . $name . '.php')) {
 			return SITE_DIR . 'template/error/' . $name . '.php';
 		}
-		foreach (System::getModules(GIMLE5) as $module) {
+		foreach (System::getModules() as $module) {
 			if (is_readable(SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php')) {
 				return SITE_DIR . 'module/' . $module . '/template/error/' . $name . '.php';
 			}
-		}
-		if (is_readable(SITE_DIR . 'module/' . GIMLE5 . '/template/error/' . $name . '.php')) {
-			return SITE_DIR . 'module/' . GIMLE5 . '/template/error/' . $name . '.php';
 		}
 		return false;
 	};
