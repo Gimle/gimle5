@@ -68,11 +68,26 @@ namespace
 
 namespace gimle
 {
+	/**
+	 * Get information about the current url.
+	 *
+	 * @param string $part The part you want returned. (Optional).
+	 * @return mixed If no $part passed in, and array of available parts is returned.
+	 *               If a valid part is part is passed in, that part is returned as a string.
+	 *               If part was not found, false will be returned.
+	 */
 	function page ($part = false)
 	{
 		return router\Router::getInstance()->page($part);
 	}
 
+	/**
+	 * Include a file and pass arguments to it.
+	 *
+	 * @param string $file The file to include.
+	 * @param mixed ...$args One or more arguments..
+	 * @return mixed The return value from the included file.
+	 */
 	function inc ($file, ...$args)
 	{
 		$GLOBALS['stUpiDlonGVarIabLeThatNoOneWilLRandMlyGueSsDotDoTSlaSh'][] = $args;
@@ -84,6 +99,11 @@ namespace gimle
 		return $res;
 	}
 
+	/**
+	 * Get arguments set when file was included.
+	 *
+	 * @return array The arguments passed in.
+	 */
 	function inc_get_args ()
 	{
 		if (isset($GLOBALS['stUpiDlonGVarIabLeThatNoOneWilLRandMlyGueSsDotDoTSlaSh'])) {
