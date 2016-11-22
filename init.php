@@ -462,21 +462,34 @@ set_exception_handler(function ($e) {
 		};
 
 		$canvas = router\Router::getInstance()->getCanvas();
-
-		if ($canvas !== false) {
-			$canvas = $getCanvas($canvas);
-		}
-		if ($canvas === false) {
+		$canvasCheck = current($e->getTrace());
+		if ((is_array($canvasCheck)) && (isset($canvasCheck['file'])) && ($canvasCheck['file'] === $canvas)) {
+			$canvas = SITE_DIR . 'module/' . GIMLE5 . '/canvas/pc.php';
 			$headers = headers_list();
 			foreach ($headers as $header) {
 				$check = 'Content-type: application/json;';
 				if (substr($header, 0, strlen($check)) === $check) {
-					$canvas = $getCanvas('json');
+					$canvas = SITE_DIR . 'module/' . GIMLE5 . '/canvas/json.php';
 				}
 			}
 		}
-		if ($canvas === false) {
-			$canvas = $getCanvas('pc');
+		else {
+
+			if ($canvas !== false) {
+				$canvas = $getCanvas($canvas);
+			}
+			if ($canvas === false) {
+				$headers = headers_list();
+				foreach ($headers as $header) {
+					$check = 'Content-type: application/json;';
+					if (substr($header, 0, strlen($check)) === $check) {
+						$canvas = $getCanvas('json');
+					}
+				}
+			}
+			if ($canvas === false) {
+				$canvas = $getCanvas('pc');
+			}
 		}
 		canvas\Canvas::_override($canvas);
 		$template = 500;
