@@ -111,4 +111,42 @@ namespace gimle
 		}
 		return [];
 	}
+
+	/**
+	 * Get the users preferred language.
+	 *
+	 * @param array $avail A list of the available languages.
+	 * @return string or false if empty array passed in.
+	 */
+	function get_preferred_language (array $avail)
+	{
+		if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+			return current($avail);
+		}
+		$accepts = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+		$result = [];
+		foreach ($accepts as $accept) {
+			$accept = explode(';q=', $accept);
+			if (!isset($accept[1])) {
+				$accept[1] = 1.0;
+			}
+			else {
+				$accept[1] = (float) $accept[1];
+			}
+			$result[$accept[1] * 100][] = $accept[0];
+		}
+		krsort($result);
+		foreach ($result as $values) {
+			foreach ($values as $value) {
+				if (in_array($value, $avail)) {
+					return $value;
+				}
+				elseif (array_key_exists($value, $avail)) {
+					return $avail[$value];
+				}
+			}
+		}
+		reset($avail);
+		return current($avail);
+	}
 }
