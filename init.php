@@ -104,7 +104,33 @@ foreach (array('temp', 'cache', 'storage') as $dir) {
 		mkdir(constant(__NAMESPACE__ . '\\' . strtoupper($dir) . '_DIR'), 0777, true);
 	}
 }
-//unset($undefinedDir);
+unset($undefinedDir);
+define(__NAMESPACE__ . '\\STATIC_DIR', SITE_DIR . 'static/');
+
+class FileStreamStorage extends FileStreamBase
+{
+	protected $base = STORAGE_DIR;
+}
+stream_wrapper_register('storage', __NAMESPACE__ . '\\FileStreamStorage');
+
+class FileStreamTemp extends FileStreamBase
+{
+	protected $base = TEMP_DIR;
+}
+stream_wrapper_register('temp', __NAMESPACE__ . '\\FileStreamTemp');
+
+class FileStreamCache extends FileStreamBase
+{
+	protected $base = CACHE_DIR;
+}
+stream_wrapper_register('cache', __NAMESPACE__ . '\\FileStreamCache');
+
+class FileStreamStatic extends FileStreamBase
+{
+	protected $base = STATIC_DIR;
+}
+stream_wrapper_register('static', __NAMESPACE__ . '\\FileStreamStatic');
+
 
 $getBase = function () {
 	$base = 'http';
@@ -259,6 +285,7 @@ if (ENV_MODE & ENV_WEB) {
 	}
 
 	if (defined(__NAMESPACE__ . '\\IS_SUBSITE')) {
+		define(__NAMESPACE__ . '\\MAIN_STATIC_DIR', MAIN_SITE_DIR . 'static/');
 	}
 	elseif (!isset($config['base'])) {
 		throw new \Exception('No basepath set.');
@@ -360,6 +387,7 @@ if (ENV_MODE & ENV_WEB) {
 		define(__NAMESPACE__ . '\\MAIN_TEMP_DIR', TEMP_DIR);
 		define(__NAMESPACE__ . '\\MAIN_CACHE_DIR', CACHE_DIR);
 		define(__NAMESPACE__ . '\\MAIN_STORAGE_DIR', STORAGE_DIR);
+		define(__NAMESPACE__ . '\\MAIN_STATIC_DIR', STATIC_DIR);
 	}
 	unset($config['base']);
 
@@ -378,6 +406,30 @@ if (ENV_MODE & ENV_WEB) {
 		unset($config['base']);
 	}
 }
+
+class FileStreamMainStorage extends FileStreamBase
+{
+	protected $base = MAIN_STORAGE_DIR;
+}
+stream_wrapper_register('main-storage', __NAMESPACE__ . '\\FileStreamMainStorage');
+
+class FileStreamMainTemp extends FileStreamBase
+{
+	protected $base = MAIN_TEMP_DIR;
+}
+stream_wrapper_register('main-temp', __NAMESPACE__ . '\\FileStreamMainTemp');
+
+class FileStreamMainCache extends FileStreamBase
+{
+	protected $base = MAIN_CACHE_DIR;
+}
+stream_wrapper_register('main-cache', __NAMESPACE__ . '\\FileStreamMainCache');
+
+class FileStreamMainStatic extends FileStreamBase
+{
+	protected $base = MAIN_STATIC_DIR;
+}
+stream_wrapper_register('main-static', __NAMESPACE__ . '\\FileStreamMainStatic');
 
 
 if (isset($config['timezone'])) {
