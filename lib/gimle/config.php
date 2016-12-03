@@ -10,6 +10,7 @@ class Config
 		if (!self::exists($key)) {
 			$set = ArrayUtils::stringToNestedArray($key, $value);
 			self::$config = ArrayUtils::merge(self::$config, $set);
+			return true;
 		}
 		return false;
 	}

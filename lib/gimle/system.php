@@ -144,6 +144,9 @@ class System
 					elseif (defined(__NAMESPACE__ . '\\' . $line[1])) {
 						$value = constant(__NAMESPACE__ . '\\' . $line[1]);
 					}
+					elseif ((in_array(substr($line[1], 0, 1), ['[', '{'])) && (in_array(substr($line[1], -1, 1), [']', '}']))) {
+						$value = json_decode($line[1], true);
+					}
 					else {
 						throw new \Exception('Unknown value in ini file on line ' . ($linenum + 1) . ': ' . $linestr);
 					}
