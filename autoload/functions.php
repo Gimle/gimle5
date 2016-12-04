@@ -121,7 +121,7 @@ namespace gimle
 	function get_preferred_language (array $avail)
 	{
 		if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-			return current($avail);
+			return false;
 		}
 		$accepts = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
 		$result = [];
@@ -146,7 +146,6 @@ namespace gimle
 				}
 			}
 		}
-		reset($avail);
-		return current($avail);
+		return false;
 	}
 }
