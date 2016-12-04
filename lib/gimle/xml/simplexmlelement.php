@@ -281,6 +281,12 @@ class SimpleXmlElement extends \SimpleXmlElement
 		}
 	}
 
+	public function innerXml ($ref = null)
+	{
+		$tag = $this->getName();
+		return preg_replace('/<'. $tag .'(?:[^>]*)>(.*)<\/'. $tag .'>/Ums', '$1', $this->asXml());
+	}
+
 	/**
 	 * Get the last child object.
 	 *
