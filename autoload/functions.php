@@ -148,4 +148,16 @@ namespace gimle
 		}
 		return false;
 	}
+
+	/**
+	 * Translate a message.
+	 *
+	 * @param string ...$message Message to translate.
+	 * @param array An array of options for the translation.
+	 * @return string The translated message.
+	 */
+	function _ (...$message)
+	{
+		return i18n::getInstance()->_(...$message);
+	}
 }
