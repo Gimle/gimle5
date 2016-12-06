@@ -483,14 +483,20 @@ Config::setAll($config);
 unset($config);
 
 foreach (System::getModules(GIMLE5) as $name) {
-	if (is_executable(SITE_DIR . 'module/' . $name . '/autoload/')) {
-		foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
-			include SITE_DIR . 'module/' . $name . '/autoload/' . $fileInfo->getFilename();
-		}
-	}
 	if (is_executable(SITE_DIR . 'module/' . $name . '/lib/')) {
 		System::autoloadRegister(SITE_DIR . 'module/' . $name . '/lib/');
 	}
+	$loadfiles = [];
+	if (is_executable(SITE_DIR . 'module/' . $name . '/autoload/')) {
+		foreach (new \RecursiveDirectoryIterator(SITE_DIR . 'module/' . $name . '/autoload/', \FilesystemIterator::SKIP_DOTS) as $fileInfo) {
+			$loadfiles[] = $fileInfo->getFilename();
+		}
+	}
+	sort($loadfiles);
+	foreach ($loadfiles as $file) {
+		include SITE_DIR . 'module/' . $name . '/autoload/' . $file;
+	}
+	unset($loadfiles);
 }
 
 if (is_executable(SITE_DIR . 'lib/')) {
