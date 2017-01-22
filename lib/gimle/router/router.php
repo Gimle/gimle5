@@ -211,84 +211,85 @@ class Router
 			throw new Exception('Method not found.', self::E_METHOD_NOT_FOUND);
 		}
 
-		if ($this->canvas !== false) {
-			$found = false;
-			if (is_readable(SITE_DIR . 'canvas/' . $this->canvas . '.php')) {
-				$this->canvas = SITE_DIR . 'canvas/' . $this->canvas . '.php';
-				$found = true;
-			}
-			else {
-				foreach (System::getModules() as $module) {
-					if (is_readable(SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php')) {
-						$this->canvas = SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php';
-						$found = true;
-					}
-				}
-			}
-			if ($found === false) {
-				throw new Exception('Canvas "' . $this->canvas . '" not found.', self::E_CANVAS_NOT_FOUND);
-			}
-		}
+		if ($this->parseCanvas === true) {
 
-		if ($this->canvas !== false) {
-			if ($this->parseCanvas === true) {
-				$canvasResult = Canvas::_set($this->canvas);
-				if ((is_array($canvasResult)) && (count($canvasResult) === 2) && (is_string($canvasResult[0])) && (is_int($canvasResult[1]))) {
-					throw new CanvasException(...$canvasResult);
-				}
-				if ($canvasResult === true) {
-					if ($this->template !== false) {
-
-						$found = false;
-						if (is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
-							$this->template = SITE_DIR . 'template/' . $this->template . '.php';
-							$found = true;
-						}
-						else {
-							foreach (System::getModules() as $module) {
-								if (is_readable(SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php')) {
-									$this->template = SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php';
-									$found = true;
-								}
-							}
-						}
-						if ($found === false) {
-							throw new Exception('Template "' . $this->template . '" not found.', self::E_TEMPLATE_NOT_FOUND);
-						}
-
-						ob_start();
-						$templateResult = include $this->template;
-						$content = ob_get_contents();
-						ob_end_clean();
-
-						if ((is_array($templateResult)) && (count($templateResult) === 2) && (is_string($templateResult[0])) && (is_int($templateResult[1]))) {
-							throw new TemplateException(...$templateResult);
-						}
-						if ($templateResult === false) {
-							if (count($this->routes[$path]) > 1) {
-								$this->canvas = $recuriveCanvasHolder;
-								array_pop($this->routes[$path]);
-								$this->dispatch();
-								return;
-							}
-							else {
-								throw new Exception('Routes exhausted.', self::E_ROUTES_EXHAUSTED);
-							}
-						}
-						if ($templateResult !== true) {
-							throw new Exception('Invalid template return value.', self::E_TEMPLATE_RETURN);
-						}
-
-						echo $content;
-					}
+			if ($this->template !== false) {
+				$found = false;
+				if (is_readable(SITE_DIR . 'template/' . $this->template . '.php')) {
+					$this->template = SITE_DIR . 'template/' . $this->template . '.php';
+					$found = true;
 				}
 				else {
-					throw new Exception('Invalid canvas return value.', self::E_CANVAS_RETURN);
+					foreach (System::getModules() as $module) {
+						if (is_readable(SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php')) {
+							$this->template = SITE_DIR . 'module/' . $module . '/template/' . $this->template . '.php';
+							$found = true;
+						}
+					}
 				}
-				Canvas::_create();
-				return;
+				if ($found === false) {
+					throw new Exception('Template "' . $this->template . '" not found.', self::E_TEMPLATE_NOT_FOUND);
+				}
+
+				ob_start();
+				$templateResult = include $this->template;
+				$content = ob_get_contents();
+				ob_end_clean();
 			}
-			include $this->canvas;
 		}
+
+		$found = false;
+		if (is_readable(SITE_DIR . 'canvas/' . $this->canvas . '.php')) {
+			$this->canvas = SITE_DIR . 'canvas/' . $this->canvas . '.php';
+			$found = true;
+		}
+		else {
+			foreach (System::getModules() as $module) {
+				if (is_readable(SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php')) {
+					$this->canvas = SITE_DIR . 'module/' . $module . '/canvas/' . $this->canvas . '.php';
+					$found = true;
+				}
+			}
+		}
+		if ($found === false) {
+			throw new Exception('Canvas "' . $this->canvas . '" not found.', self::E_CANVAS_NOT_FOUND);
+		}
+
+		if ($this->parseCanvas === true) {
+			$canvasResult = Canvas::_set($this->canvas);
+			if ((is_array($canvasResult)) && (count($canvasResult) === 2) && (is_string($canvasResult[0])) && (is_int($canvasResult[1]))) {
+				throw new CanvasException(...$canvasResult);
+			}
+			if ($canvasResult === true) {
+				if ($this->template !== false) {
+
+					if ((is_array($templateResult)) && (count($templateResult) === 2) && (is_string($templateResult[0])) && (is_int($templateResult[1]))) {
+						throw new TemplateException(...$templateResult);
+					}
+					if ($templateResult === false) {
+						if (count($this->routes[$path]) > 1) {
+							$this->canvas = $recuriveCanvasHolder;
+							array_pop($this->routes[$path]);
+							$this->dispatch();
+							return;
+						}
+						else {
+							throw new Exception('Routes exhausted.', self::E_ROUTES_EXHAUSTED);
+						}
+					}
+					if ($templateResult !== true) {
+						throw new Exception('Invalid template return value.', self::E_TEMPLATE_RETURN);
+					}
+
+					echo $content;
+				}
+			}
+			else {
+				throw new Exception('Invalid canvas return value.', self::E_CANVAS_RETURN);
+			}
+			Canvas::_create();
+			return;
+		}
+		include $this->canvas;
 	}
 }
